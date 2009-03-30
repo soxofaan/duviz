@@ -73,8 +73,10 @@ def human_readable_size(size):
         return '%dB' % size
     elif size < 1e6:
         return '%.2fKB' % (size / 1.0e3)
-    else:
+    elif size < 1e9:
         return '%.2fMB' % (size / 1.0e6)
+    else:
+        return '%.2fGB' % (size / 1.0e9)
 
 ##############################################################################
 def path_split(path):
