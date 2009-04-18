@@ -110,8 +110,8 @@ class DirectoryTreeNode(object):
     def import_path(self, path, size):
         '''
         Import directory tree data
-        @param path list of path directory entries
-        @param size total size of the path
+        @param path list of path directory entries.
+        @param size total size of the path in bytes.
         '''
         assert len(path) > 0
         # Make sure that given path is compatible with the path of current
@@ -196,7 +196,10 @@ def build_tree(directory, feedback=sys.stdout, terminal_width=80, options=None):
     '''
 
     durep = re.compile(r'([0-9]*)\s*(.*)')
-    duargs = ['-b']
+    # Measure size in 1024 byte blocks. The GNU-du option -b enables counting
+    # in bytes directely, but it is not available in BSD-du.
+    duargs = ['-k']
+    # Handling of symbolic links.
     if hasattr(options, 'onefilesystem') and options.onefilesystem:
         duargs.append('-x')
     if hasattr(options, 'dereference') and options.dereference:
@@ -205,7 +208,8 @@ def build_tree(directory, feedback=sys.stdout, terminal_width=80, options=None):
     dirtree = DirectoryTreeNode(directory)
     for line in dupipe.stdout:
         mo = durep.match(line)
-        size = int(mo.group(1))
+        # Size in bytes.
+        size = int(mo.group(1)) * 1024
         path = mo.group(2)
         if feedback:
             feedback.write(('scanning %s' % path).ljust(terminal_width)[:terminal_width] + '\r')
