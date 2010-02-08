@@ -143,7 +143,7 @@ class DirectoryTreeNode(object):
             self.subdirs[name].import_path(path, size)
 
     def __cmp__(self, other):
-        return -cmp(self.size, other.size)
+        return - cmp(self.size, other.size)
 
     def __repr__(self):
          return '%s(%d)%s' % (self.name, self.size, self.subdirs.values())
@@ -173,7 +173,7 @@ class DirectoryTreeNode(object):
             for sd in subdirs:
                 cumsize += sd.size
                 currpos = int(float(width * cumsize) / self.size)
-                subdir_blocks.append(sd.block_display(currpos-lastpos, max_depth-1, top=False).split('\n'))
+                subdir_blocks.append(sd.block_display(currpos - lastpos, max_depth - 1, top=False).split('\n'))
                 lastpos = currpos
             # Assemble blocks.
             height = max([len(lns) for lns in subdir_blocks])
@@ -252,7 +252,7 @@ if __name__ == '__main__':
 
     ########################################
     # Do current dir if no dirs are given.
-    if len(cliargs)==0:
+    if len(cliargs) == 0:
         cliargs = ['.']
 
 
