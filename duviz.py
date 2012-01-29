@@ -17,7 +17,7 @@
 ##############################################################################
 
 '''
-Command line tool for visual rendering the disk space usage of a directory
+Command line tool for visualization of the disk space usage of a directory
 and its subdirectories.
 '''
 
@@ -25,6 +25,7 @@ import os
 import sys
 import re
 import subprocess
+
 
 ##############################################################################
 def terminal_size():
@@ -50,6 +51,7 @@ def terminal_size():
             height, width = (25, 80)
     return height, width
 
+
 ##############################################################################
 def bar(width, label, fill='-', left='[', right=']', one='|'):
     '''
@@ -66,6 +68,7 @@ def bar(width, label, fill='-', left='[', right=']', one='|'):
     else:
         return ''
 
+
 ##############################################################################
 def human_readable_size(size):
     '''Return size as 11B, 12.34KB or 345.24MB.'''
@@ -77,6 +80,7 @@ def human_readable_size(size):
         return '%.2fMB' % (size / 1.0e6)
     else:
         return '%.2fGB' % (size / 1.0e9)
+
 
 ##############################################################################
 def path_split(path):
@@ -92,6 +96,7 @@ def path_split(path):
             break
         path = head
     return items
+
 
 ##############################################################################
 class DirectoryTreeNode(object):
@@ -146,7 +151,7 @@ class DirectoryTreeNode(object):
         return - cmp(self.size, other.size)
 
     def __repr__(self):
-         return '%s(%d)%s' % (self.name, self.size, self.subdirs.values())
+        return '%s(%d)%s' % (self.name, self.size, self.subdirs.values())
 
     def block_display(self, width, max_depth=5, top=True):
         if width < 1 or max_depth < 0:
@@ -215,11 +220,9 @@ def build_tree(directory, feedback=sys.stdout, terminal_width=80, options=None):
             feedback.write(('scanning %s' % path).ljust(terminal_width)[:terminal_width] + '\r')
         dirtree.import_path(path_split(path), size)
     if feedback:
-        feedback.write(' '*terminal_width + '\r')
+        feedback.write(' ' * terminal_width + '\r')
     dupipe.stdout.close()
     return dirtree
-
-
 
 
 ##############################################################################
@@ -255,8 +258,6 @@ if __name__ == '__main__':
     if len(cliargs) == 0:
         cliargs = ['.']
 
-
     for directory in cliargs:
         tree = build_tree(directory, terminal_width=clioptions.display_width, options=clioptions)
         print tree.block_display(clioptions.display_width, max_depth=clioptions.max_depth)
-
