@@ -29,7 +29,11 @@ import subprocess
 
 ##############################################################################
 def terminal_size():
-    '''Best effort guess of terminal size: returns (height, width).'''
+    '''
+    Best effort guess of terminal size.
+
+    @return (height, width)
+    '''
     try:
         # Try to get size from ioctl system call (Unix only).
         import struct, fcntl, termios
@@ -55,10 +59,16 @@ def terminal_size():
 ##############################################################################
 def bar(width, label, fill='-', left='[', right=']', one='|'):
     '''
-    Make a string of length 'width' with 'label' in the center,
-    (trimmed if too long to fit in the string), 'left' at the left,
-    'right' at the right and filling the void, if any, with 'fill'.
-    If the width is one, return 'one'.
+    Helper function to render bar strings of certain width with a label.
+
+    @param width the desired total width
+    @param label the label to be rendered (will be clipped if too long).
+    @param fill the fill character to fill empty space
+    @param left the symbol to use at the left of the bar
+    @param right the symbol to use at the right of the bar
+    @param one the character to use when the bar should be only one character wide
+
+    @return rendered string
     '''
     if width >= 2:
         label_width = width - len(left) - len(right)
