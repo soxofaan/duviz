@@ -255,8 +255,8 @@ if __name__ == '__main__':
     import optparse
     cliparser = optparse.OptionParser(
         '''usage: %prog [options] [DIRS]
-        %prog gives a graphic representation of the
-        usage of the subdirs in the directories DIRS.''',
+        %prog gives a graphic representation of the disk space
+        usage of the folder trees under DIRS.''',
         version='%prog 1.0')
     cliparser.add_option('-w', '--width',
         action='store', type='int', dest='display_width', default=terminal_width,
