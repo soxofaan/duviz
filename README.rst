@@ -4,7 +4,7 @@ What is duviz?
 
 ``duviz.py`` is a simple command line utility written in Python to visualize disk space usage.
 
-It's like the plethora of desktop applications and widgets (e.g. Filelight, DaisyDisk, WinDirStat, JDiskReport, ...), but instead of a fancy GUI with animated pie charts and shaded boxes you get a funky "ASCII art style hierachical tree of bars". If that did make a lot of sense to you, look at this example of my ``/opt`` folder::
+It's like the plethora of desktop applications and widgets (e.g. Filelight, DaisyDisk, WinDirStat, JDiskReport, ...), but instead of a fancy GUI with animated pie charts and shaded boxes you get a funky "ASCII art style hierachical tree of bars". If that didn't make a lot of sense to you, look at this example of my ``/opt`` folder::
 
 	$ duviz.py /opt
 	________________________________________________________________________________
