@@ -4,7 +4,11 @@ What is duviz?
 
 ``duviz.py`` is a simple command line utility written in Python to visualize disk space usage.
 
-It's like the plethora of desktop applications and widgets (e.g. Filelight, DaisyDisk, WinDirStat, JDiskReport, ...), but instead of a fancy GUI with animated pie charts and shaded boxes you get a funky "ASCII art style hierachical tree of bars". If that didn't make a lot of sense to you, look at this example of my ``/opt`` folder::
+It's like the plethora of desktop applications and widgets
+(e.g. Filelight, DaisyDisk, WinDirStat, JDiskReport, TreeSize, SpaceSniffer, ...),
+but instead of a fancy GUI with animated pie charts and shaded boxes
+you get a funky "ASCII art style hierarchical tree of bars".
+If that didn't make a lot of sense to you, look at this example of my ``/opt`` folder::
 
 	$ duviz.py /opt
 	________________________________________________________________________________
@@ -25,19 +29,25 @@ It's like the plethora of desktop applications and widgets (e.g. Filelight, Dais
 How does it work?
 -----------------
 
-The script ``duviz.py`` launches the UNIX utility ``du`` to gather disk space statistics, parses its output and renders this information in an easily understandable ASCII-art image.
+The script ``duviz.py`` dispatches the heavy work to the UNIX utility ``du`` to gather disk space statistics,
+parses its output and renders this information in an easily understandable ASCII-art image.
 
 Installation
 ------------
 
 Dependencies
-	``duviz.py`` is designed to run on UNIX platforms (like Linux and OS X), where its dependencies (a Python 2.x interpreter and the ``du`` utility) are typically available out of the box, so nothing to do on this front.
+	``duviz.py`` is designed to run on UNIX platforms (like Linux and OS X),
+	where its dependencies (a Python 2.x interpreter and the ``du`` utility)
+	are typically available out of the box, so nothing to do on this front. Yay.
+	On Windows you'll be sad probably.
 
 Run it
 	``duviz.py`` is a standalone script, you can store it and run it from where ever you want.
 
 Installation
-	To have it easily at your service, without having to remeber the full path: copy or symlink the script to a folder in your ``$PATH``.
+	To have it easily at your service (without having to remember the script's full path):
+	copy or symlink the script to a folder in your ``$PATH``.
+	If you don't know what this means, ask a UNIX guru near you.
 
 Usage
 -----
