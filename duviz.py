@@ -104,7 +104,7 @@ def human_readable_count(count):
 
 ##############################################################################
 def path_split(path):
-    '''Split a file system path in items.'''
+    '''Split a file system path in a list of path components (as a recursive os.path.split()).'''
     items = []
     while True:
         head, tail = os.path.split(path)

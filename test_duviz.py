@@ -75,3 +75,18 @@ class HumanReadableSizeTest(unittest.TestCase):
             self.assertEqual(expected, duviz.human_readable_byte_size(x, True))
 
 
+class PathSplitTest(unittest.TestCase):
+
+    def test_path_split(self):
+        data = [
+            ('aa', ['aa']),
+            ('aa/', ['aa', '']),
+            ('aa/bB', ['aa', 'bB']),
+            ('/aA/bB/c_c', ['/', 'aA', 'bB', 'c_c']),
+            ('/aA/bB/c_c/', ['/', 'aA', 'bB', 'c_c', '']),
+        ]
+        for input, expected in data:
+            self.assertEqual(expected, duviz.path_split(input))
+
+
+
