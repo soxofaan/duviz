@@ -80,16 +80,26 @@ def bar(width, label, fill='-', left='[', right=']', one='|'):
 
 
 ##############################################################################
-def human_readable_size(size):
-    '''Return size as 11B, 12.34KB or 345.24MB.'''
-    if size < 1e3:
-        return '%dB' % size
-    elif size < 1e6:
-        return '%.2fKB' % (size / 1.0e3)
-    elif size < 1e9:
-        return '%.2fMB' % (size / 1.0e6)
+def _human_readable_size(size, base, formats):
+    '''Helper function to render counts and sizes in a easily readable format.'''
+    for f in formats[:-1]:
+        if round(size, 2) < base:
+            return f.format(size)
+        size = float(size) / base
+    return f[-1].forma(size)
+
+
+def human_readable_byte_size(size, binary=False):
+    '''Return byte size as 11B, 12.34KB or 345.24MB (or binary: 12.34KiB, 345.24MiB).'''
+    if binary:
+        return _human_readable_size(size, 1024, ['{0:d}B', '{0:.2f}KiB', '{0:.2f}MiB', '{0:.2f}GiB', '{0:.2f}TiB'])
     else:
-        return '%.2fGB' % (size / 1.0e9)
+        return _human_readable_size(size, 1000, ['{0:d}B', '{0:.2f}KB', '{0:.2f}MB', '{0:.2f}GB', '{0:.2f}TB'])
+
+
+def human_readable_count(count):
+    '''Return inode count as 11, 12.34k or 345.24M.'''
+    return _human_readable_size(count, 1000, ['{0:d}', '{0:.2f}k', '{0:.2f}M', '{0:.2f}G', '{0:.2f}T'])
 
 
 ##############################################################################
@@ -174,7 +184,7 @@ class DirectoryTreeNode(object):
 
         # Display of current dir.
         lines.append(bar(width, self.name, fill=' '))
-        lines.append(bar(width, str(human_readable_size(self.size)), fill='_'))
+        lines.append(bar(width, str(human_readable_byte_size(self.size)), fill='_'))
 
         # Display of subdirectories.
         subdirs = self.subdirs.values()
