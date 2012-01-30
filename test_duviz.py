@@ -83,13 +83,28 @@ class PathSplitTest(unittest.TestCase):
     def test_path_split(self):
         data = [
             ('aa', ['aa']),
-            ('aa/', ['aa', '']),
+            ('aa/', ['aa']),
             ('aa/bB', ['aa', 'bB']),
             ('/aA/bB/c_c', ['/', 'aA', 'bB', 'c_c']),
-            ('/aA/bB/c_c/', ['/', 'aA', 'bB', 'c_c', '']),
+            ('/aA/bB/c_c/', ['/', 'aA', 'bB', 'c_c']),
         ]
         for input, expected in data:
             self.assertEqual(expected, duviz.path_split(input))
+
+    def test_path_split_with_base(self):
+        data = [
+            ('aa', 'a', ['aa']),
+            ('aa/', '', ['aa']),
+            ('a/b/c/d/', 'a', ['a', 'b', 'c', 'd']),
+            ('a/b/c/d/', 'a/b', ['a/b', 'c', 'd']),
+            ('a/b/c/d/', 'a/b/', ['a/b', 'c', 'd']),
+            ('a/b/c/d/', 'a/b/c', ['a/b/c', 'd']),
+            ('a/b/c/d/', 'a/b/c/d', ['a/b/c/d']),
+            ('a/b/c/d', 'a/b/c/d/', ['a/b/c/d']),
+            ('a/b/c/d', 'a/B', ['a', 'b', 'c', 'd']),
+        ]
+        for input, base, expected in data:
+            self.assertEqual(expected, duviz.path_split(input, base))
 
 
 class BuildDuTreeTest(unittest.TestCase):
