@@ -252,7 +252,7 @@ def build_tree(directory, feedback=sys.stdout, terminal_width=80, options=None):
 
 
 ##############################################################################
-if __name__ == '__main__':
+def main():
 
     terminal_width = terminal_size()[1]
 
@@ -287,3 +287,8 @@ if __name__ == '__main__':
     for directory in cliargs:
         tree = build_tree(directory, terminal_width=clioptions.display_width, options=clioptions)
         print tree.block_display(clioptions.display_width, max_depth=clioptions.max_depth)
+
+
+
+if __name__ == '__main__':
+    main()
