@@ -284,12 +284,21 @@ def build_inode_count_tree(directory, feedback=sys.stdout, terminal_width=80):
         process = subprocess.Popen(['ls', '-aiR'] + [directory], stdout=subprocess.PIPE)
     except OSError:
         raise SubprocessException('Failed to launch "ls" subprocess.')
+
+    tree = _build_inode_count_tree(directory, process.stdout, feedback=feedback, terminal_width=terminal_width)
+
+    process.stdout.close()
+
+    return tree
+
+
+def _build_inode_count_tree(directory, ls_pipe, feedback=None, terminal_width=80):
     tree = DirectoryTreeNode(directory)
     # Path of current directory.
     path = directory
     count = 0
     all_inodes = set()
-    for line in process.stdout:
+    for line in ls_pipe:
         line = line.rstrip('\r\n')
         if line == '':
             # Listing of current directory is finished
@@ -314,7 +323,6 @@ def build_inode_count_tree(directory, feedback=sys.stdout, terminal_width=80):
     tree.import_path(path, count)
     if feedback:
         feedback.write(' ' * terminal_width + '\r')
-    process.stdout.close()
 
     tree.recalculate_own_sizes_to_total_sizes()
 
