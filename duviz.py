@@ -349,16 +349,24 @@ def main():
     (clioptions, cliargs) = cliparser.parse_args()
 
     ########################################
-    # Do current dir if no dirs are given.
-    if len(cliargs) == 0:
-        cliargs = ['.']
+    # Make sure we have a valid list of paths
+    if len(cliargs) > 0:
+        paths = []
+        for path in cliargs:
+            if os.path.exists(path):
+                paths.append(path)
+            else:
+                sys.stderr.write('Warning: not a valid path: "{0}"\n'.format(path))
+    else:
+        # Do current dir if no dirs are given.
+        paths = ['.']
 
     if clioptions.inode_count:
-        for directory in cliargs:
+        for directory in paths:
             tree = build_inode_count_tree(directory, terminal_width=clioptions.display_width, options=clioptions)
             print tree.block_display(clioptions.display_width, max_depth=clioptions.max_depth, size_renderer=human_readable_count)
     else:
-        for directory in cliargs:
+        for directory in paths:
             tree = build_du_tree(directory, terminal_width=clioptions.display_width, one_filesystem=clioptions.onefilesystem, dereference=clioptions.dereference)
             print tree.block_display(clioptions.display_width, max_depth=clioptions.max_depth)
 
