@@ -218,7 +218,7 @@ class SubprocessException(Exception):
     pass
 
 ##############################################################################
-def build_tree(directory, feedback=sys.stdout, terminal_width=80, options=None):
+def build_tree(directory, feedback=sys.stdout, terminal_width=80, one_filesystem=False, dereference=False):
     '''
     Build a tree of DirectoryTreeNodes, starting at the given directory.
     '''
@@ -228,9 +228,9 @@ def build_tree(directory, feedback=sys.stdout, terminal_width=80, options=None):
     # in bytes directely, but it is not available in BSD-du.
     duargs = ['-k']
     # Handling of symbolic links.
-    if hasattr(options, 'onefilesystem') and options.onefilesystem:
+    if one_filesystem:
         duargs.append('-x')
-    if hasattr(options, 'dereference') and options.dereference:
+    if dereference:
         duargs.append('-L')
     try:
         dupipe = subprocess.Popen(['du'] + duargs + [directory], stdout=subprocess.PIPE)
@@ -285,7 +285,7 @@ def main():
         cliargs = ['.']
 
     for directory in cliargs:
-        tree = build_tree(directory, terminal_width=clioptions.display_width, options=clioptions)
+        tree = build_tree(directory, terminal_width=clioptions.display_width, one_filesystem=clioptions.onefilesystem, dereference=clioptions.dereference)
         print tree.block_display(clioptions.display_width, max_depth=clioptions.max_depth)
 
 
