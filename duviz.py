@@ -275,7 +275,7 @@ def _build_du_tree(directory, du_pipe, feedback=None, terminal_width=80):
 
     return dir_tree
 
-def build_inode_count_tree(directory, feedback=sys.stdout, terminal_width=80, options=None):
+def build_inode_count_tree(directory, feedback=sys.stdout, terminal_width=80):
     '''
     Build tree of DirectoryTreeNodes withinode counts.
     '''
@@ -366,7 +366,7 @@ def main():
 
     if clioptions.inode_count:
         for directory in paths:
-            tree = build_inode_count_tree(directory, terminal_width=clioptions.display_width, options=clioptions)
+            tree = build_inode_count_tree(directory, terminal_width=clioptions.display_width)
             print tree.block_display(clioptions.display_width, max_depth=clioptions.max_depth, size_renderer=human_readable_count)
     else:
         for directory in paths:
