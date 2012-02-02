@@ -217,13 +217,13 @@ class DirectoryTreeNode(object):
 class SubprocessException(Exception):
     pass
 
+
 ##############################################################################
-def build_tree(directory, feedback=sys.stdout, terminal_width=80, one_filesystem=False, dereference=False):
+def build_du_tree(directory, feedback=sys.stdout, terminal_width=80, one_filesystem=False, dereference=False):
     '''
     Build a tree of DirectoryTreeNodes, starting at the given directory.
     '''
 
-    durep = re.compile(r'([0-9]*)\s*(.*)')
     # Measure size in 1024 byte blocks. The GNU-du option -b enables counting
     # in bytes directely, but it is not available in BSD-du.
     duargs = ['-k']
@@ -233,22 +233,37 @@ def build_tree(directory, feedback=sys.stdout, terminal_width=80, one_filesystem
     if dereference:
         duargs.append('-L')
     try:
-        dupipe = subprocess.Popen(['du'] + duargs + [directory], stdout=subprocess.PIPE)
+        du_pipe = subprocess.Popen(['du'] + duargs + [directory], stdout=subprocess.PIPE)
     except OSError:
         raise SubprocessException('Failed to launch "du" utility subprocess. Is it installed and in your PATH?')
-    dirtree = DirectoryTreeNode(directory)
-    for line in dupipe.stdout:
-        mo = durep.match(line)
+
+    dir_tree = _build_du_tree(directory, du_pipe.stdout, feedback=feedback, terminal_width=terminal_width)
+
+    du_pipe.stdout.close()
+
+    return dir_tree
+
+
+def _build_du_tree(directory, du_pipe, feedback=None, terminal_width=80):
+    '''
+    Helper function
+    '''
+    du_rep = re.compile(r'([0-9]*)\s*(.*)')
+
+    dir_tree = DirectoryTreeNode(directory)
+
+    for line in du_pipe:
+        mo = du_rep.match(line)
         # Size in bytes.
         size = int(mo.group(1)) * 1024
         path = mo.group(2)
         if feedback:
             feedback.write(('scanning %s' % path).ljust(terminal_width)[:terminal_width] + '\r')
-        dirtree.import_path(path_split(path), size)
+        dir_tree.import_path(path_split(path), size)
     if feedback:
         feedback.write(' ' * terminal_width + '\r')
-    dupipe.stdout.close()
-    return dirtree
+
+    return dir_tree
 
 
 ##############################################################################
@@ -285,7 +300,7 @@ def main():
         cliargs = ['.']
 
     for directory in cliargs:
-        tree = build_tree(directory, terminal_width=clioptions.display_width, one_filesystem=clioptions.onefilesystem, dereference=clioptions.dereference)
+        tree = build_du_tree(directory, terminal_width=clioptions.display_width, one_filesystem=clioptions.onefilesystem, dereference=clioptions.dereference)
         print tree.block_display(clioptions.display_width, max_depth=clioptions.max_depth)
 
 

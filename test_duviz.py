@@ -1,5 +1,8 @@
 
 import unittest
+import StringIO
+import textwrap
+
 
 import duviz
 
@@ -89,4 +92,51 @@ class PathSplitTest(unittest.TestCase):
             self.assertEqual(expected, duviz.path_split(input))
 
 
+class BuildDuTreeTest(unittest.TestCase):
 
+    def test_build_du_tree1(self):
+        dir = 'path/to'
+        du_pipe = StringIO.StringIO(textwrap.dedent('''\
+            120     path/to/foo
+            10      path/to/bar/a
+            163     path/to/bar/b
+            360     path/to/bar/c
+            612     path/to/bar
+            2       path/to/s p a c e s
+            800     path/to
+        '''))
+        tree = duviz._build_du_tree(dir, du_pipe, feedback=None)
+        result = tree.block_display(width=40)
+        expected = textwrap.dedent('''\
+            ________________________________________
+            [               path/to                ]
+            [_______________819.20KB_______________]
+            [            bar             ][foo ]
+            [__________626.69KB__________][122.]
+            [       c       ][  b   ]|
+            [____368.64KB___][166.91]|
+        ''')
+        self.assertEqual(expected.split(), result.split())
+
+    def test_build_du_tree2(self):
+        dir = 'path/to'
+        du_pipe = StringIO.StringIO(textwrap.dedent('''\
+            1       path/to/A
+            1       path/to/b
+            2       path/to/C
+            4       path/to
+        '''))
+        tree = duviz._build_du_tree(dir, du_pipe, feedback=None)
+        result = tree.block_display(width=40)
+        expected = textwrap.dedent('''\
+            ________________________________________
+            [               path/to                ]
+            [________________4.10KB________________]
+            [        C         ][   A    ][   b    ]
+            [______2.05KB______][_1.02KB_][_1.02KB_]
+        ''')
+        self.assertEqual(expected.split(), result.split())
+
+
+if __name__ == '__main__':
+    unittest.main()
