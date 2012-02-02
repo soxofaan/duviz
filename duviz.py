@@ -214,6 +214,9 @@ class DirectoryTreeNode(object):
         return '\n'.join(lines)
 
 
+class SubprocessException(Exception):
+    pass
+
 ##############################################################################
 def build_tree(directory, feedback=sys.stdout, terminal_width=80, options=None):
     '''
@@ -229,7 +232,10 @@ def build_tree(directory, feedback=sys.stdout, terminal_width=80, options=None):
         duargs.append('-x')
     if hasattr(options, 'dereference') and options.dereference:
         duargs.append('-L')
-    dupipe = subprocess.Popen(['du'] + duargs + [directory], stdout=subprocess.PIPE)
+    try:
+        dupipe = subprocess.Popen(['du'] + duargs + [directory], stdout=subprocess.PIPE)
+    except OSError:
+        raise SubprocessException('Failed to launch "du" utility subprocess. Is it installed and in your PATH?')
     dirtree = DirectoryTreeNode(directory)
     for line in dupipe.stdout:
         mo = durep.match(line)
