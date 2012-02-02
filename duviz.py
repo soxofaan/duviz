@@ -280,7 +280,10 @@ def build_inode_count_tree(directory, feedback=sys.stdout, terminal_width=80, op
     Build tree of DirectoryTreeNodes withinode counts.
     '''
 
-    process = subprocess.Popen(['ls', '-aiR'] + [directory], stdout=subprocess.PIPE)
+    try:
+        process = subprocess.Popen(['ls', '-aiR'] + [directory], stdout=subprocess.PIPE)
+    except OSError:
+        raise SubprocessException('Failed to launch "ls" subprocess.')
     tree = DirectoryTreeNode(directory)
     # Path of current directory.
     path = directory
