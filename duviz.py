@@ -27,6 +27,11 @@ import re
 import subprocess
 
 
+# TODO: linux support for inode listing
+# TODO: catch absence/failure of du/ls subprocesses
+# TODO: how to handle unreadable subdirs in du/ls?
+# TODO: option to sort alphabetically (instead of on size)
+
 ##############################################################################
 def terminal_size():
     '''
