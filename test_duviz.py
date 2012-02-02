@@ -252,6 +252,14 @@ class BuildInodeCountTreeBsdLsTest(unittest.TestCase):
         )
 
 
+class BuildInodeCountTreeGnuLsTest(BuildInodeCountTreeBsdLsTest):
+    '''
+    For GNU version of ls
+    '''
+
+    def assertInputOuput(self, directory, ls_str, expected, width=40):
+        ls_str = directory + ':\n' + ls_str
+        BuildInodeCountTreeBsdLsTest.assertInputOuput(self, directory, ls_str, expected, width)
 
 
 
