@@ -26,11 +26,15 @@ If that didn't make a lot of sense to you, look at this example of my ``/opt`` f
 	[17][][]||||||||||||||||||||[]               |            ||| |  [23]  ||[]
 
 
+Instead of size in bytes, you can also get inode usage: just use the option ``-i``.
+
 How does it work?
 -----------------
 
 The script ``duviz.py`` dispatches the heavy work to the UNIX utility ``du`` to gather disk space statistics,
 parses its output and renders this information in an easily understandable ASCII-art image.
+
+For inode counting a recursive ``ls -i`` is used instead of ``du``.
 
 Installation
 ------------
