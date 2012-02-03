@@ -27,6 +27,11 @@ import re
 import subprocess
 
 
+# TODO: linux support for inode listing
+# TODO: catch absence/failure of du/ls subprocesses
+# TODO: how to handle unreadable subdirs in du/ls?
+# TODO: option to sort alphabetically (instead of on size)
+
 ##############################################################################
 def terminal_size():
     '''
@@ -84,7 +89,7 @@ def _human_readable_size(size, base, formats):
     '''Helper function to render counts and sizes in a easily readable format.'''
     for f in formats[:-1]:
         if round(size, 2) < base:
-            return f.format(size)
+            return f % size
         size = float(size) / base
     return f[-1].forma(size)
 
@@ -92,30 +97,39 @@ def _human_readable_size(size, base, formats):
 def human_readable_byte_size(size, binary=False):
     '''Return byte size as 11B, 12.34KB or 345.24MB (or binary: 12.34KiB, 345.24MiB).'''
     if binary:
-        return _human_readable_size(size, 1024, ['{0:d}B', '{0:.2f}KiB', '{0:.2f}MiB', '{0:.2f}GiB', '{0:.2f}TiB'])
+        return _human_readable_size(size, 1024, ['%dB', '%.2fKiB', '%.2fMiB', '%.2fGiB', '%.2fTiB'])
     else:
-        return _human_readable_size(size, 1000, ['{0:d}B', '{0:.2f}KB', '{0:.2f}MB', '{0:.2f}GB', '{0:.2f}TB'])
+        return _human_readable_size(size, 1000, ['%dB', '%.2fKB', '%.2fMB', '%.2fGB', '%.2fTB'])
 
 
 def human_readable_count(count):
     '''Return inode count as 11, 12.34k or 345.24M.'''
-    return _human_readable_size(count, 1000, ['{0:d}', '{0:.2f}k', '{0:.2f}M', '{0:.2f}G', '{0:.2f}T'])
+    return _human_readable_size(count, 1000, ['%d', '%.2fk', '%.2fM', '%.2fG', '%.2fT'])
 
 
 ##############################################################################
-def path_split(path):
-    '''Split a file system path in a list of path components (as a recursive os.path.split()).'''
+def path_split(path, base=''):
+    '''
+    Split a file system path in a list of path components (as a recursive os.path.split()),
+    optionally only up to a given base path.
+    '''
+    if base.endswith(os.path.sep):
+        base = base.rstrip(os.path.sep)
     items = []
     while True:
-        head, tail = os.path.split(path)
-        items.insert(0, tail)
-        if head == '':
+        if path == base:
+            items.insert(0, path)
             break
-        elif head == '/':
-            items.insert(0, head)
+        path, tail = os.path.split(path)
+        if tail != '':
+            items.insert(0, tail)
+        if path == '':
             break
-        path = head
+        if path == '/':
+            items.insert(0, path)
+            break
     return items
+
 
 
 ##############################################################################
@@ -124,56 +138,52 @@ class DirectoryTreeNode(object):
     Node in a directory tree, holds the name of the node, its size (including
     subdirectories) and the subdirectories.
     '''
-    def __init__(self, name, size=None):
-        self.name = name
-        self.size = size
-        self.subdirs = {}
 
-    def own_size(self):
-        return self.size - sum([d.size for d in self.subdirs])
+    def __init__(self, path):
+        # Name of the node. For root node: path up to root node as given, for subnodes: just the folder name
+        self.name = path
+        # Total size of node.
+        # By default this is assumed to be total node size, inclusive sub nodes,
+        # otherwise recalculate_own_sizes_to_total_sizes() should be called.
+        self.size = None
+        # Dictionary of subnodess
+        self._subnodes = {}
+
 
     def import_path(self, path, size):
         '''
         Import directory tree data
-        @param path list of path directory entries.
+        @param path Path object: list of path directory components.
         @param size total size of the path in bytes.
         '''
-        assert len(path) > 0
-        # Make sure that given path is compatible with the path of current
-        # node. For example:
-        #     self.name = 'a/b/' -> self_path = ['a', 'b', '']
-        #     path = ['a', 'b', 'c']
-        self_path = path_split(self.name)
-        # Remove common prefix, resulting in
-        #     self_path = []
-        #     path = ['c']
-        while len(self_path) > 0:
-            if self_path[0] == path[0]:
-                self_path.pop(0)
-                path.pop(0)
-            elif len(self_path) == 1 and self_path[0] == '':
-                self_path.pop(0)
-            else:
-                raise ValueError
-        # Do something with the remaining path.
-        if len(path) == 0:
-            # We are at the end of the path: store size.
-            assert self.size == None
-            self.size = size
-        else:
-            # We are not yet at end of path: descend further.
-            name = path[0]
-            if name not in self.subdirs.keys():
-                self.subdirs[name] = DirectoryTreeNode(name)
-            self.subdirs[name].import_path(path, size)
+        # Get relative path
+        path = path_split(path, base=self.name)[1:]
+        # Walk down path and create subnodes if required.
+        cursor = self
+        for component in path:
+            if component not in cursor._subnodes:
+                cursor._subnodes[component] = DirectoryTreeNode(component)
+            cursor = cursor._subnodes[component]
+        # Set size at cursor
+        assert cursor.size == None
+        cursor.size = size
+
+    def recalculate_own_sizes_to_total_sizes(self):
+        '''
+        If provided sizes were own sizes instead of total node sizes.
+
+        @return (recalculated) total size of node
+        '''
+        self.size = self.size + sum([n.recalculate_own_sizes_to_total_sizes() for n in self._subnodes.values()])
+        return self.size
 
     def __cmp__(self, other):
         return - cmp(self.size, other.size)
 
     def __repr__(self):
-        return '%s(%d)%s' % (self.name, self.size, self.subdirs.values())
+        return '[%s(%d):%s]' % (self.name, self.size, repr(self._subnodes))
 
-    def block_display(self, width, max_depth=5, top=True):
+    def block_display(self, width, max_depth=5, top=True, size_renderer=human_readable_byte_size):
         if width < 1 or max_depth < 0:
             return ''
 
@@ -184,10 +194,10 @@ class DirectoryTreeNode(object):
 
         # Display of current dir.
         lines.append(bar(width, self.name, fill=' '))
-        lines.append(bar(width, str(human_readable_byte_size(self.size)), fill='_'))
+        lines.append(bar(width, size_renderer(self.size), fill='_'))
 
         # Display of subdirectories.
-        subdirs = self.subdirs.values()
+        subdirs = self._subnodes.values()
         if len(subdirs) > 0:
             # Generate block display.
             subdirs.sort()
@@ -198,7 +208,7 @@ class DirectoryTreeNode(object):
             for sd in subdirs:
                 cumsize += sd.size
                 currpos = int(float(width * cumsize) / self.size)
-                subdir_blocks.append(sd.block_display(currpos - lastpos, max_depth - 1, top=False).split('\n'))
+                subdir_blocks.append(sd.block_display(currpos - lastpos, max_depth - 1, top=False, size_renderer=size_renderer).split('\n'))
                 lastpos = currpos
             # Assemble blocks.
             height = max([len(lns) for lns in subdir_blocks])
@@ -259,11 +269,75 @@ def _build_du_tree(directory, du_pipe, feedback=None, terminal_width=80):
         path = mo.group(2)
         if feedback:
             feedback.write(('scanning %s' % path).ljust(terminal_width)[:terminal_width] + '\r')
-        dir_tree.import_path(path_split(path), size)
+        dir_tree.import_path(path, size)
     if feedback:
         feedback.write(' ' * terminal_width + '\r')
 
     return dir_tree
+
+
+def build_inode_count_tree(directory, feedback=sys.stdout, terminal_width=80):
+    '''
+    Build tree of DirectoryTreeNodes withinode counts.
+    '''
+
+    try:
+        process = subprocess.Popen(['ls', '-aiR'] + [directory], stdout=subprocess.PIPE)
+    except OSError:
+        raise SubprocessException('Failed to launch "ls" subprocess.')
+
+    tree = _build_inode_count_tree(directory, process.stdout, feedback=feedback, terminal_width=terminal_width)
+
+    process.stdout.close()
+
+    return tree
+
+
+def _build_inode_count_tree(directory, ls_pipe, feedback=None, terminal_width=80):
+    tree = DirectoryTreeNode(directory)
+    # Path of current directory.
+    path = directory
+    count = 0
+    all_inodes = set()
+
+    # Process data per directory block (separated by two newlines)
+    blocks = ls_pipe.read().rstrip('\n').split('\n\n')
+    for i, dir_ls in enumerate(blocks):
+        items = dir_ls.split('\n')
+
+        # Get current path in directory tree
+        if i == 0 and not items[0].endswith(':'):
+            # BSD compatibility: in first block the root directory can be omitted
+            path = directory
+        else:
+            path = items.pop(0).rstrip(':')
+
+        if feedback:
+            feedback.write(('scanning %s' % path).ljust(terminal_width)[:terminal_width] + '\r')
+
+        # Collect inodes for current directory
+        count = 0
+        for item in items:
+            inode, name = item.lstrip().split(' ', 1)
+            # Skip parent entry
+            if name == '..':
+                continue
+            # Get and process inode
+            inode = int(inode)
+            if inode not in all_inodes:
+                count += 1
+            all_inodes.add(inode)
+
+        # Store count.
+        tree.import_path(path, count)
+
+    # Clear feedback output.
+    if feedback:
+        feedback.write(' ' * terminal_width + '\r')
+
+    tree.recalculate_own_sizes_to_total_sizes()
+
+    return tree
 
 
 ##############################################################################
@@ -291,19 +365,33 @@ def main():
     cliparser.add_option('--max-depth',
         action='store', type='int', dest='max_depth', default=5,
         help='maximum recursion depth', metavar='N')
+    cliparser.add_option('-i', '--inodes',
+        action='store_true', dest='inode_count', default=False,
+        help='count inodes instead of file size')
 
     (clioptions, cliargs) = cliparser.parse_args()
 
     ########################################
-    # Do current dir if no dirs are given.
-    if len(cliargs) == 0:
-        cliargs = ['.']
+    # Make sure we have a valid list of paths
+    if len(cliargs) > 0:
+        paths = []
+        for path in cliargs:
+            if os.path.exists(path):
+                paths.append(path)
+            else:
+                sys.stderr.write('Warning: not a valid path: "%s"\n' % path)
+    else:
+        # Do current dir if no dirs are given.
+        paths = ['.']
 
-    for directory in cliargs:
-        tree = build_du_tree(directory, terminal_width=clioptions.display_width, one_filesystem=clioptions.onefilesystem, dereference=clioptions.dereference)
-        print tree.block_display(clioptions.display_width, max_depth=clioptions.max_depth)
-
-
+    if clioptions.inode_count:
+        for directory in paths:
+            tree = build_inode_count_tree(directory, terminal_width=clioptions.display_width)
+            print tree.block_display(clioptions.display_width, max_depth=clioptions.max_depth, size_renderer=human_readable_count)
+    else:
+        for directory in paths:
+            tree = build_du_tree(directory, terminal_width=clioptions.display_width, one_filesystem=clioptions.onefilesystem, dereference=clioptions.dereference)
+            print tree.block_display(clioptions.display_width, max_depth=clioptions.max_depth)
 
 if __name__ == '__main__':
     main()

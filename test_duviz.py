@@ -83,13 +83,28 @@ class PathSplitTest(unittest.TestCase):
     def test_path_split(self):
         data = [
             ('aa', ['aa']),
-            ('aa/', ['aa', '']),
+            ('aa/', ['aa']),
             ('aa/bB', ['aa', 'bB']),
             ('/aA/bB/c_c', ['/', 'aA', 'bB', 'c_c']),
-            ('/aA/bB/c_c/', ['/', 'aA', 'bB', 'c_c', '']),
+            ('/aA/bB/c_c/', ['/', 'aA', 'bB', 'c_c']),
         ]
         for input, expected in data:
             self.assertEqual(expected, duviz.path_split(input))
+
+    def test_path_split_with_base(self):
+        data = [
+            ('aa', 'a', ['aa']),
+            ('aa/', '', ['aa']),
+            ('a/b/c/d/', 'a', ['a', 'b', 'c', 'd']),
+            ('a/b/c/d/', 'a/b', ['a/b', 'c', 'd']),
+            ('a/b/c/d/', 'a/b/', ['a/b', 'c', 'd']),
+            ('a/b/c/d/', 'a/b/c', ['a/b/c', 'd']),
+            ('a/b/c/d/', 'a/b/c/d', ['a/b/c/d']),
+            ('a/b/c/d', 'a/b/c/d/', ['a/b/c/d']),
+            ('a/b/c/d', 'a/B', ['a', 'b', 'c', 'd']),
+        ]
+        for input, base, expected in data:
+            self.assertEqual(expected, duviz.path_split(input, base))
 
 
 class BuildDuTreeTest(unittest.TestCase):
@@ -136,6 +151,116 @@ class BuildDuTreeTest(unittest.TestCase):
             [______2.05KB______][_1.02KB_][_1.02KB_]
         ''')
         self.assertEqual(expected.split(), result.split())
+
+
+class BuildInodeCountTreeBsdLsTest(unittest.TestCase):
+    '''
+    For BSD version of ls
+    '''
+
+    def assertInputOuput(self, directory, ls_str, expected, width=40):
+        ls_pipe = StringIO.StringIO(ls_str)
+        tree = duviz._build_inode_count_tree(directory, ls_pipe, feedback=None)
+        result = tree.block_display(width=width, size_renderer=duviz.human_readable_count)
+        self.assertEqual(expected.split('\n'), result.split('\n'))
+
+    def test_build_inode_count_tree_simple(self):
+        self.assertInputOuput(
+            directory='path/to',
+            ls_str=textwrap.dedent('''\
+                222 .
+                  1 ..
+                333 file.txt
+                444 anotherfile.txt
+            '''),
+            expected=textwrap.dedent('''\
+                ________________________________________
+                [               path/to                ]
+                [__________________3___________________]''')
+        )
+
+    def test_build_inode_count_tree_with_hardlink(self):
+        self.assertInputOuput(
+            directory='path/to',
+            ls_str=textwrap.dedent('''\
+                222 .
+                  1 ..
+                333 file.txt
+                444 anotherfile.txt
+                333 hardlink.txt
+            '''),
+            expected=textwrap.dedent('''\
+                ________________________________________
+                [               path/to                ]
+                [__________________3___________________]''')
+        )
+
+    def test_build_inode_count_tree_subdir(self):
+        self.assertInputOuput(
+            directory='path/to',
+            ls_str=textwrap.dedent('''\
+                222 .
+                  1 ..
+                333 file.txt
+                444 directory
+                555 anotherfile.txt
+
+                path/to/directory:
+                444 .
+                222 ..
+                666 devil.txt
+                777 god.txt
+            '''),
+            expected=textwrap.dedent('''\
+                ________________________________________
+                [               path/to                ]
+                [__________________6___________________]
+                [ directory ]                           \n\
+                [_____2_____]                           ''')
+        )
+
+    def test_build_inode_count_tree_various(self):
+        self.assertInputOuput(
+            directory='path/to',
+            ls_str=textwrap.dedent('''\
+                2395 .
+                2393 ..
+                2849 bar
+                1166 barln
+                2845 a.txt
+                2846 b b b.txt
+                2842 c.txt
+
+                path/to/A:
+                2849 .
+                2395 ..
+                2851 d.txt
+                2852 e.txt
+
+                path/to/B:
+                1166 .
+                2395 ..
+                2852 bla.txt
+                1174 zaza
+            '''),
+            expected=textwrap.dedent('''\
+                ________________________________________
+                [               path/to                ]
+                [__________________9___________________]
+                [  A   ][ B ]                           \n\
+                [__2___][_1_]                           ''')
+        )
+
+
+class BuildInodeCountTreeGnuLsTest(BuildInodeCountTreeBsdLsTest):
+    '''
+    For GNU version of ls
+    '''
+
+    def assertInputOuput(self, directory, ls_str, expected, width=40):
+        ls_str = directory + ':\n' + ls_str
+        BuildInodeCountTreeBsdLsTest.assertInputOuput(self, directory, ls_str, expected, width)
+
 
 
 if __name__ == '__main__':
