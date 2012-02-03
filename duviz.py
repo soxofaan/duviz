@@ -89,7 +89,7 @@ def _human_readable_size(size, base, formats):
     '''Helper function to render counts and sizes in a easily readable format.'''
     for f in formats[:-1]:
         if round(size, 2) < base:
-            return f.format(size)
+            return f % size
         size = float(size) / base
     return f[-1].forma(size)
 
@@ -97,14 +97,14 @@ def _human_readable_size(size, base, formats):
 def human_readable_byte_size(size, binary=False):
     '''Return byte size as 11B, 12.34KB or 345.24MB (or binary: 12.34KiB, 345.24MiB).'''
     if binary:
-        return _human_readable_size(size, 1024, ['{0:d}B', '{0:.2f}KiB', '{0:.2f}MiB', '{0:.2f}GiB', '{0:.2f}TiB'])
+        return _human_readable_size(size, 1024, ['%dB', '%.2fKiB', '%.2fMiB', '%.2fGiB', '%.2fTiB'])
     else:
-        return _human_readable_size(size, 1000, ['{0:d}B', '{0:.2f}KB', '{0:.2f}MB', '{0:.2f}GB', '{0:.2f}TB'])
+        return _human_readable_size(size, 1000, ['%dB', '%.2fKB', '%.2fMB', '%.2fGB', '%.2fTB'])
 
 
 def human_readable_count(count):
     '''Return inode count as 11, 12.34k or 345.24M.'''
-    return _human_readable_size(count, 1000, ['{0:d}', '{0:.2f}k', '{0:.2f}M', '{0:.2f}G', '{0:.2f}T'])
+    return _human_readable_size(count, 1000, ['%d', '%.2fk', '%.2fM', '%.2fG', '%.2fT'])
 
 
 ##############################################################################
@@ -379,7 +379,7 @@ def main():
             if os.path.exists(path):
                 paths.append(path)
             else:
-                sys.stderr.write('Warning: not a valid path: "{0}"\n'.format(path))
+                sys.stderr.write('Warning: not a valid path: "%s"\n' % path)
     else:
         # Do current dir if no dirs are given.
         paths = ['.']
