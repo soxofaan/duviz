@@ -275,6 +275,7 @@ def _build_du_tree(directory, du_pipe, feedback=None, terminal_width=80):
 
     return dir_tree
 
+
 def build_inode_count_tree(directory, feedback=sys.stdout, terminal_width=80):
     '''
     Build tree of DirectoryTreeNodes withinode counts.
@@ -298,35 +299,46 @@ def _build_inode_count_tree(directory, ls_pipe, feedback=None, terminal_width=80
     path = directory
     count = 0
     all_inodes = set()
-    for line in ls_pipe:
-        line = line.rstrip('\r\n')
-        if line == '':
-            # Listing of current directory is finished
-            tree.import_path(path, count)
-            # We start a new directory (path on next line)
-            path = None
-        elif path == None:
-            # Previous directory was finished, starting new one
-            path = line.rstrip(':')
-            count = 0
-            if feedback:
-                feedback.write(('scanning %s' % path).ljust(terminal_width)[:terminal_width] + '\r')
+
+    # Process data per directory block (separated by two newlines)
+    blocks = ls_pipe.read().rstrip('\n').split('\n\n')
+    for i, dir_ls in enumerate(blocks):
+        items = dir_ls.split('\n')
+
+        # Get current path in directory tree
+        if i == 0 and not items[0].endswith(':'):
+            # BSD compatibility: in first block the root directory can be omitted
+            path = directory
         else:
-            # Collect inodes for current directory
-            inode, name = line.lstrip().split(' ', 1)
-            if name != '..':
-                inode = int(inode)
-                if inode not in all_inodes:
-                    count += 1
-                all_inodes.add(inode)
-    # Last import
-    tree.import_path(path, count)
+            path = items.pop(0).rstrip(':')
+
+        if feedback:
+            feedback.write(('scanning %s' % path).ljust(terminal_width)[:terminal_width] + '\r')
+
+        # Collect inodes for current directory
+        count = 0
+        for item in items:
+            inode, name = item.lstrip().split(' ', 1)
+            # Skip parent entry
+            if name == '..':
+                continue
+            # Get and process inode
+            inode = int(inode)
+            if inode not in all_inodes:
+                count += 1
+            all_inodes.add(inode)
+
+        # Store count.
+        tree.import_path(path, count)
+
+    # Clear feedback output.
     if feedback:
         feedback.write(' ' * terminal_width + '\r')
 
     tree.recalculate_own_sizes_to_total_sizes()
 
     return tree
+
 
 ##############################################################################
 def main():
