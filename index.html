@@ -1,0 +1,124 @@
+<!doctype html>
+<!--[if lt IE 7]> <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="en"> <![endif]-->
+<!--[if IE 7]>    <html class="no-js lt-ie9 lt-ie8" lang="en"> <![endif]-->
+<!--[if IE 8]>    <html class="no-js lt-ie9" lang="en"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en"> <!--<![endif]-->
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+	<title>Duviz</title>
+	<meta name="description" content="">
+	<meta name="author" content="">
+
+	<meta name="viewport" content="width=device-width">
+
+	<link rel="stylesheet" href="css/style.css">
+
+	<script src="js/libs/modernizr-2.5.3.min.js"></script>
+</head>
+<body>
+
+<header>
+<h1>Duviz</h1>
+<p class="subtitle">
+Disk space visualization<br />
+in ASCII art style<br />
+for a command line near you!
+</p>
+</header>
+
+<div id="main" role="main">
+
+<h2>What's Duviz?</h2>
+
+<p>
+<code>duviz.py</code> is a simple UNIX command line utility
+written in Python to visualize disk space usage.
+</p>
+
+<p>
+It's like the plethora of desktop applications and widgets
+(e.g. Filelight, DaisyDisk, WinDirStat, JDiskReport, TreeSize, SpaceSniffer, ...),
+but instead of a fancy GUI with animated pie charts and shaded boxes
+you get a funky "ASCII art style hierarchical tree of bars".
+</p>
+
+<p>
+If that didn't make a lot of sense to you, look at this example of my <code>/opt</code> folder:
+</p>
+
+<img src="duviz.png" title="Duviz in action" alt="Duviz in action" />
+
+<p>
+Oh my god, that's handy for finding those pesky disk hogs!
+</p>
+
+<h2>Features</h2>
+
+<ul>
+	<li>Virtually no dependencies. You just need a Python 2.x interpreter and the <code>du</code> and <code>ls</code> utilities, which are usually available on a typical out of the box UNIX setup.</li>
+	<li>Just one script file <code>duviz.py</code>. Put it where you want it. Use it how you want it.</li>
+	<li>Quick. No need to wait for a GUI tool to get up and running, let alone scanning your disk. The hard work is done by <code>du</code> (or <code>ls</code>), which run an C-speed.</li>
+	<li>Duviz detects your terminal width for maximum visualization pleasure.</li>
+	<li>No arguments: visualize the current working directory. With directories as argument: visualize each of the given directories. How intuitive is that!</li>
+	<li>Support of inode counting instead of file size analysis. Just add <code>-i</code> or <code>--inodes</code>.</li>
+</ul>
+
+
+<h2>Get it!</h2>
+
+<p>
+If you just want the script:
+<a href="https://raw.github.com/soxofaan/duviz/master/duviz.py" class="button">Download duviz.py</a>
+</p>
+
+<p>
+If you want to do it the fancy github way:
+<a href="https://github.com/soxofaan/duviz" class="button">Fork Duviz on Github</a>
+</p>
+
+
+<h2>Install it, use it</h2>
+
+<p>
+	To have it easily at your service (without having to remember the script's full path):
+	copy or symlink the <code>duviz.py</code> script to a folder in your <code>$PATH</code>
+	(and make sure that is executable).
+	If you don't know what this means, ask your favorite UNIX guru.
+</p>
+
+<p>
+	Run it.
+	With or without directories as arguments.
+	Add options (like <code>--inodes</code>).
+	Ask more help with <code>--help</code>.
+</p>
+
+</div>
+
+<a href="https://github.com/soxofaan/duviz"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://a248.e.akamai.net/assets.github.com/img/30f550e0d38ceb6ef5b81500c64d970b7fb0f028/687474703a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6f72616e67655f6666373630302e706e67" alt="Fork me on GitHub"></a>
+
+
+<footer>
+
+&copy; Stefaan Lippens 2009-2012
+&mdash;
+Use at your own risk
+
+</footer>
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+<script>window.jQuery || document.write('<script src="js/libs/jquery-1.7.1.min.js"><\/script>')</script>
+
+
+<script>
+	var _gaq=[['_setAccount','UA-4807787-5'],['_trackPageview']];
+	(function(d,t){var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
+	g.src=('https:'==location.protocol?'//ssl':'//www')+'.google-analytics.com/ga.js';
+	s.parentNode.insertBefore(g,s)}(document,'script'));
+</script>
+
+
+</body>
+</html>
