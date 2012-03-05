@@ -76,6 +76,7 @@ a.button {
 	text-align: center;
 	text-decoration: none;
 	color: #4F1903;
+	background-color: #EDB340;
 	background-image: linear-gradient(bottom, rgb(156,108,11) 0%, rgb(237,179,64) 100%);
 	background-image: -o-linear-gradient(bottom, rgb(156,108,11) 0%, rgb(237,179,64) 100%);
 	background-image: -moz-linear-gradient(bottom, rgb(156,108,11) 0%, rgb(237,179,64) 100%);
