@@ -89,9 +89,9 @@ a.button {
 
 a.button:hover {
 	color: #A1340A;
-	box-shadow: 0 0 10px rgba(255, 255, 255, 1);
-    -webkit-box-shadow: 0 0 10px rgba(255, 255, 255, 1);
-    -moz-box-shadow: 0 0 10px rgba(255, 0, 255, 1);
+	box-shadow: 0 0 5px rgba(255, 255, 200, 1);
+	-webkit-box-shadow: 0 0 5px rgba(255, 255, 200, 1);
+	-moz-box-shadow: 0 0 5px rgba(255, 255, 200, 1);
 }
 
 footer {
