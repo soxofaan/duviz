@@ -1,6 +1,6 @@
 
 body {
-	background-color: #321;
+	background-color: #301F0D;
 	color: #bba;
 	font-family: Helvetica, Arial, sans-serif;
 	font-size: 11pt;
@@ -97,8 +97,8 @@ a.button:hover {
 footer {
 	margin: 100px auto 0;
 	width: 600px;
-	border-top: 1px solid #87694A;
+	border-top: 1px solid #6B451F;
 	font-size: 9pt;
 	text-align: center;
-	color: #87694A;
+	color: #6B451F;
 }
