@@ -90,7 +90,7 @@ def _human_readable_size(size, base, formats):
         if round(size, 2) < base:
             return f % size
         size = float(size) / base
-    return f[-1].forma(size)
+    return formats[-1] % size
 
 
 def human_readable_byte_size(size, binary=False):

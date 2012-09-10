@@ -43,6 +43,8 @@ class HumanReadableSizeTest(unittest.TestCase):
             (999990, '999.99k'),
             (999999, '1.00M'),
             (1000000, '1.00M'),
+            (1000000000, '1.00G'),
+            (1000000000000, '1.00T'),
         ]
         for x, expected in data:
             self.assertEqual(expected, duviz.human_readable_count(x))
@@ -73,6 +75,8 @@ class HumanReadableSizeTest(unittest.TestCase):
             (5432, '5.30KiB'),
             (1000000, '976.56KiB'),
             (1024 * 1024, '1.00MiB'),
+            (1024 * 1024 * 1024, '1.00GiB'),
+            (1024 * 1024 * 1024 * 1024, '1.00TiB'),
         ]
         for x, expected in data:
             self.assertEqual(expected, duviz.human_readable_byte_size(x, True))
