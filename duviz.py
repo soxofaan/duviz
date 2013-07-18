@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ##############################################################################
-# Copyright 2009-2012 Stefaan Lippens
+# Copyright 2009-2013 Stefaan Lippens
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
 '''
 Command line tool for visualization of the disk space usage of a directory
 and its subdirectories.
+
+Copyright: 2009-2013 Stefaan Lippens
+Website: http://soxofaan.github.io/duviz/
 '''
 
 import os
