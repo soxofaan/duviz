@@ -370,6 +370,9 @@ def main():
     cliparser.add_option('-i', '--inodes',
         action='store_true', dest='inode_count', default=False,
         help='count inodes instead of file size')
+    cliparser.add_option('--no-progress',
+        action='store_false', dest='show_progress', default=True,
+        help='disable progress reporting')
 
     (clioptions, cliargs) = cliparser.parse_args()
 
@@ -386,13 +389,18 @@ def main():
         # Do current dir if no dirs are given.
         paths = ['.']
 
+    if clioptions.show_progress:
+        feedback = sys.stdout
+    else:
+        feedback = None
+
     if clioptions.inode_count:
         for directory in paths:
-            tree = build_inode_count_tree(directory, terminal_width=clioptions.display_width)
+            tree = build_inode_count_tree(directory, feedback=feedback, terminal_width=clioptions.display_width)
             print tree.block_display(clioptions.display_width, max_depth=clioptions.max_depth, size_renderer=human_readable_count)
     else:
         for directory in paths:
-            tree = build_du_tree(directory, terminal_width=clioptions.display_width, one_filesystem=clioptions.onefilesystem, dereference=clioptions.dereference)
+            tree = build_du_tree(directory, feedback=feedback, terminal_width=clioptions.display_width, one_filesystem=clioptions.onefilesystem, dereference=clioptions.dereference)
             print tree.block_display(clioptions.display_width, max_depth=clioptions.max_depth)
 
 if __name__ == '__main__':
