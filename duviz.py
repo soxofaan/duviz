@@ -20,7 +20,7 @@
 Command line tool for visualization of the disk space usage of a directory
 and its subdirectories.
 
-Copyright: 2009-2013 Stefaan Lippens
+Copyright: 2009-2016 Stefaan Lippens
 Website: http://soxofaan.github.io/duviz/
 '''
 
