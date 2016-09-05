@@ -1,7 +1,11 @@
 # coding=utf-8
-import unittest
-import StringIO
 import textwrap
+import unittest
+
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 import duviz
 
@@ -110,7 +114,7 @@ class PathSplitTest(unittest.TestCase):
 class BuildDuTreeTest(unittest.TestCase):
     def test_build_du_tree1(self):
         directory = 'path/to'
-        du_pipe = StringIO.StringIO(textwrap.dedent('''\
+        du_pipe = StringIO(textwrap.dedent('''\
             120     path/to/foo
             10      path/to/bar/a
             163     path/to/bar/b
@@ -134,7 +138,7 @@ class BuildDuTreeTest(unittest.TestCase):
 
     def test_build_du_tree2(self):
         directory = 'path/to'
-        du_pipe = StringIO.StringIO(textwrap.dedent('''\
+        du_pipe = StringIO(textwrap.dedent('''\
             1       path/to/A
             1       path/to/b
             2       path/to/C
@@ -158,7 +162,7 @@ class BuildInodeCountTreeBsdLsTest(unittest.TestCase):
     """
 
     def assertInputOuput(self, directory, ls_str, expected, width=40):
-        ls_pipe = StringIO.StringIO(ls_str)
+        ls_pipe = StringIO(ls_str)
         tree = duviz._build_inode_count_tree(directory, ls_pipe, feedback=None)
         result = tree.block_display(width=width, size_renderer=duviz.human_readable_count)
         self.assertEqual(expected.split('\n'), result.split('\n'))
