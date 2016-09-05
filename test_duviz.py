@@ -1,14 +1,16 @@
-
+# coding=utf-8
 import unittest
-import StringIO
-import textwrap
 
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
+import textwrap
 
 import duviz
 
 
 class BarTest(unittest.TestCase):
-
     def test_one(self):
         res = duviz.bar(1, 'x', one='y')
         self.assertEqual(res, 'y')
@@ -31,7 +33,6 @@ class BarTest(unittest.TestCase):
 
 
 class HumanReadableSizeTest(unittest.TestCase):
-
     def test_human_readable_count(self):
         data = [
             (0, '0'),
@@ -83,7 +84,6 @@ class HumanReadableSizeTest(unittest.TestCase):
 
 
 class PathSplitTest(unittest.TestCase):
-
     def test_path_split(self):
         data = [
             ('aa', ['aa']),
@@ -92,8 +92,8 @@ class PathSplitTest(unittest.TestCase):
             ('/aA/bB/c_c', ['/', 'aA', 'bB', 'c_c']),
             ('/aA/bB/c_c/', ['/', 'aA', 'bB', 'c_c']),
         ]
-        for input, expected in data:
-            self.assertEqual(expected, duviz.path_split(input))
+        for input_, expected in data:
+            self.assertEqual(expected, duviz.path_split(input_))
 
     def test_path_split_with_base(self):
         data = [
@@ -107,15 +107,14 @@ class PathSplitTest(unittest.TestCase):
             ('a/b/c/d', 'a/b/c/d/', ['a/b/c/d']),
             ('a/b/c/d', 'a/B', ['a', 'b', 'c', 'd']),
         ]
-        for input, base, expected in data:
-            self.assertEqual(expected, duviz.path_split(input, base))
+        for input_, base, expected in data:
+            self.assertEqual(expected, duviz.path_split(input_, base))
 
 
 class BuildDuTreeTest(unittest.TestCase):
-
     def test_build_du_tree1(self):
-        dir = 'path/to'
-        du_pipe = StringIO.StringIO(textwrap.dedent('''\
+        dir_ = 'path/to'
+        du_pipe = StringIO(textwrap.dedent('''\
             120     path/to/foo
             10      path/to/bar/a
             163     path/to/bar/b
@@ -124,7 +123,7 @@ class BuildDuTreeTest(unittest.TestCase):
             2       path/to/s p a c e s
             800     path/to
         '''))
-        tree = duviz._build_du_tree(dir, du_pipe, feedback=None)
+        tree = duviz._build_du_tree(dir_, du_pipe, feedback=None)
         result = tree.block_display(width=40)
         expected = textwrap.dedent('''\
             ________________________________________
@@ -135,17 +134,18 @@ class BuildDuTreeTest(unittest.TestCase):
             [       c       ][  b   ]|
             [____368.64KB___][166.91]|
         ''')
+        print(result)
         self.assertEqual(expected.split(), result.split())
 
     def test_build_du_tree2(self):
-        dir = 'path/to'
-        du_pipe = StringIO.StringIO(textwrap.dedent('''\
+        dir_ = 'path/to'
+        du_pipe = StringIO(textwrap.dedent('''\
             1       path/to/A
             1       path/to/b
             2       path/to/C
             4       path/to
         '''))
-        tree = duviz._build_du_tree(dir, du_pipe, feedback=None)
+        tree = duviz._build_du_tree(dir_, du_pipe, feedback=None)
         result = tree.block_display(width=40)
         expected = textwrap.dedent('''\
             ________________________________________
@@ -158,12 +158,12 @@ class BuildDuTreeTest(unittest.TestCase):
 
 
 class BuildInodeCountTreeBsdLsTest(unittest.TestCase):
-    '''
+    """
     For BSD version of ls
-    '''
+    """
 
     def assertInputOuput(self, directory, ls_str, expected, width=40):
-        ls_pipe = StringIO.StringIO(ls_str)
+        ls_pipe = StringIO(ls_str)
         tree = duviz._build_inode_count_tree(directory, ls_pipe, feedback=None)
         result = tree.block_display(width=width, size_renderer=duviz.human_readable_count)
         self.assertEqual(expected.split('\n'), result.split('\n'))
@@ -257,14 +257,13 @@ class BuildInodeCountTreeBsdLsTest(unittest.TestCase):
 
 
 class BuildInodeCountTreeGnuLsTest(BuildInodeCountTreeBsdLsTest):
-    '''
+    """
     For GNU version of ls
-    '''
+    """
 
     def assertInputOuput(self, directory, ls_str, expected, width=40):
         ls_str = directory + ':\n' + ls_str
         BuildInodeCountTreeBsdLsTest.assertInputOuput(self, directory, ls_str, expected, width)
-
 
 
 if __name__ == '__main__':
