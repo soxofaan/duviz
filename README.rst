@@ -1,3 +1,5 @@
+.. image:: https://travis-ci.org/soxofaan/duviz.svg?branch=master
+    :target: https://travis-ci.org/soxofaan/duviz
 
 What is duviz?
 --------------
