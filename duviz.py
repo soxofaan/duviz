@@ -29,6 +29,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 
 
 # TODO: catch absence/failure of du/ls subprocesses
@@ -154,8 +155,8 @@ class DirectoryTreeNode(object):
     def import_path(self, path, size):
         """
         Import directory tree data
-        @param path Path object: list of path directory components.
-        @param size total size of the path in bytes.
+        @param path: Path object list of path directory components.
+        @param size: total size of the path in bytes.
         """
         # Get relative path
         path = path_split(path, base=self.name)[1:]
@@ -232,13 +233,13 @@ class SubprocessException(Exception):
 
 
 ##############################################################################
-def build_du_tree(directory, feedback=sys.stdout, terminal_width=80, one_filesystem=False, dereference=False):
+def build_du_tree(directory, progress=None, one_filesystem=False, dereference=False):
     """
     Build a tree of DirectoryTreeNodes, starting at the given directory.
     """
 
     # Measure size in 1024 byte blocks. The GNU-du option -b enables counting
-    # in bytes directely, but it is not available in BSD-du.
+    # in bytes directly, but it is not available in BSD-du.
     duargs = ['-k']
     # Handling of symbolic links.
     if one_filesystem:
@@ -250,14 +251,14 @@ def build_du_tree(directory, feedback=sys.stdout, terminal_width=80, one_filesys
     except OSError:
         raise SubprocessException('Failed to launch "du" utility subprocess. Is it installed and in your PATH?')
 
-    dir_tree = _build_du_tree(directory, du_pipe.stdout, feedback=feedback, terminal_width=terminal_width)
+    dir_tree = _build_du_tree(directory, du_pipe.stdout, progress=progress)
 
     du_pipe.stdout.close()
 
     return dir_tree
 
 
-def _build_du_tree(directory, du_pipe, feedback=None, terminal_width=80):
+def _build_du_tree(directory, du_pipe, progress=None):
     """
     Helper function
     """
@@ -270,16 +271,16 @@ def _build_du_tree(directory, du_pipe, feedback=None, terminal_width=80):
         # Size in bytes.
         size = int(mo.group(1)) * 1024
         path = mo.group(2)
-        if feedback:
-            feedback.write(('scanning %s' % path).ljust(terminal_width)[:terminal_width] + '\r')
+        if progress:
+            progress('scanning %s' % path)
         dir_tree.import_path(path, size)
-    if feedback:
-        feedback.write(' ' * terminal_width + '\r')
+    if progress:
+        progress('')
 
     return dir_tree
 
 
-def build_inode_count_tree(directory, feedback=sys.stdout, terminal_width=80):
+def build_inode_count_tree(directory, progress=None):
     """
     Build tree of DirectoryTreeNodes withinode counts.
     """
@@ -289,14 +290,14 @@ def build_inode_count_tree(directory, feedback=sys.stdout, terminal_width=80):
     except OSError:
         raise SubprocessException('Failed to launch "ls" subprocess.')
 
-    tree = _build_inode_count_tree(directory, process.stdout, feedback=feedback, terminal_width=terminal_width)
+    tree = _build_inode_count_tree(directory, process.stdout, progress=progress)
 
     process.stdout.close()
 
     return tree
 
 
-def _build_inode_count_tree(directory, ls_pipe, feedback=None, terminal_width=80):
+def _build_inode_count_tree(directory, ls_pipe, progress=None):
     tree = DirectoryTreeNode(directory)
     # Path of current directory.
     path = directory
@@ -315,8 +316,8 @@ def _build_inode_count_tree(directory, ls_pipe, feedback=None, terminal_width=80
         else:
             path = items.pop(0).rstrip(':')
 
-        if feedback:
-            feedback.write(('scanning %s' % path).ljust(terminal_width)[:terminal_width] + '\r')
+        if progress:
+            progress('scanning %s' % path)
 
         # Collect inodes for current directory
         count = 0
@@ -335,12 +336,26 @@ def _build_inode_count_tree(directory, ls_pipe, feedback=None, terminal_width=80
         tree.import_path(path, count)
 
     # Clear feedback output.
-    if feedback:
-        feedback.write(' ' * terminal_width + '\r')
+    if progress:
+        progress('')
 
     tree.recalculate_own_sizes_to_total_sizes()
 
     return tree
+
+
+def get_progress_callback(stream=sys.stdout, interval=.2, terminal_width=80):
+    class State:
+        """Python 2 compatible hack to have 'nonlocal' scoped state."""
+        threshold = 0
+
+    def progress(s):
+        now = time.time()
+        if now > State.threshold:
+            stream.write(s.ljust(terminal_width)[:terminal_width] + '\r')
+            State.threshold = now + interval
+
+    return progress
 
 
 ##############################################################################
@@ -396,18 +411,18 @@ def main():
         paths = ['.']
 
     if clioptions.show_progress:
-        feedback = sys.stdout
+        feedback = get_progress_callback(stream=sys.stdout, terminal_width=clioptions.display_width)
     else:
         feedback = None
 
     if clioptions.inode_count:
         for directory in paths:
-            tree = build_inode_count_tree(directory, feedback=feedback, terminal_width=clioptions.display_width)
+            tree = build_inode_count_tree(directory, progress=feedback)
             print(tree.block_display(clioptions.display_width, max_depth=clioptions.max_depth,
                                      size_renderer=human_readable_count))
     else:
         for directory in paths:
-            tree = build_du_tree(directory, feedback=feedback, terminal_width=clioptions.display_width,
+            tree = build_du_tree(directory, progress=feedback,
                                  one_filesystem=clioptions.onefilesystem, dereference=clioptions.dereference)
             print(tree.block_display(clioptions.display_width, max_depth=clioptions.max_depth))
 

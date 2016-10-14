@@ -123,7 +123,7 @@ class BuildDuTreeTest(unittest.TestCase):
             2       path/to/s p a c e s
             800     path/to
         '''))
-        tree = duviz._build_du_tree(directory, du_pipe, feedback=None)
+        tree = duviz._build_du_tree(directory, du_pipe, progress=None)
         result = tree.block_display(width=40)
         expected = textwrap.dedent('''\
             ________________________________________
@@ -144,7 +144,7 @@ class BuildDuTreeTest(unittest.TestCase):
             2       path/to/C
             4       path/to
         '''))
-        tree = duviz._build_du_tree(directory, du_pipe, feedback=None)
+        tree = duviz._build_du_tree(directory, du_pipe, progress=None)
         result = tree.block_display(width=40)
         expected = textwrap.dedent('''\
             ________________________________________
@@ -163,7 +163,7 @@ class BuildInodeCountTreeBsdLsTest(unittest.TestCase):
 
     def assertInputOuput(self, directory, ls_str, expected, width=40):
         ls_pipe = StringIO(ls_str)
-        tree = duviz._build_inode_count_tree(directory, ls_pipe, feedback=None)
+        tree = duviz._build_inode_count_tree(directory, ls_pipe, progress=None)
         result = tree.block_display(width=width, size_renderer=duviz.human_readable_count)
         self.assertEqual(expected.split('\n'), result.split('\n'))
 
