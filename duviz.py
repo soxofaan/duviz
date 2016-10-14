@@ -267,7 +267,7 @@ def _build_du_tree(directory, du_pipe, progress=None):
     dir_tree = DirectoryTreeNode(directory)
 
     for line in du_pipe:
-        mo = du_rep.match(line)
+        mo = du_rep.match(line.decode('ascii'))
         # Size in bytes.
         size = int(mo.group(1)) * 1024
         path = mo.group(2)
@@ -305,7 +305,7 @@ def _build_inode_count_tree(directory, ls_pipe, progress=None):
     all_inodes = set()
 
     # Process data per directory block (separated by two newlines)
-    blocks = ls_pipe.read().rstrip('\n').split('\n\n')
+    blocks = ls_pipe.read().decode('ascii').rstrip('\n').split('\n\n')
     for i, dir_ls in enumerate(blocks):
         items = dir_ls.split('\n')
 
