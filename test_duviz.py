@@ -2,6 +2,8 @@
 import textwrap
 import unittest
 
+import time
+
 try:
     from StringIO import StringIO
 except ImportError:
@@ -263,6 +265,17 @@ class BuildInodeCountTreeGnuLsTest(BuildInodeCountTreeBsdLsTest):
     def assertInputOuput(self, directory, ls_str, expected, width=40):
         ls_str = directory + ':\n' + ls_str
         BuildInodeCountTreeBsdLsTest.assertInputOuput(self, directory, ls_str, expected, width)
+
+
+class ProgressTest(unittest.TestCase):
+    def test_get_progress_callback(self):
+        stream = StringIO()
+        progress = duviz.get_progress_callback(stream=stream, interval=0.1, terminal_width=10)
+        for i in range(4):
+            progress('path %d' % i)
+            time.sleep(0.05)
+
+        self.assertEqual('path 0    \rpath 2    \r', stream.getvalue())
 
 
 if __name__ == '__main__':
