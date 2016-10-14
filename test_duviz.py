@@ -150,7 +150,7 @@ class BuildDuTreeTest(unittest.TestCase):
             ________________________________________
             [               path/to                ]
             [________________4.10KB________________]
-            [        C         ][   A    ][   b    ]
+            [        C         ][   b    ][   A    ]
             [______2.05KB______][_1.02KB_][_1.02KB_]
         ''')
         self.assertEqual(expected.split(), result.split())

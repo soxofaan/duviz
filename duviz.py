@@ -179,7 +179,8 @@ class DirectoryTreeNode(object):
         return self.size
 
     def __lt__(self, other):
-        return self.size < other.size
+        # We only implement rich comparison method __lt__ so make sorting work.
+        return (self.size, self.name) < (other.size, other.name)
 
     def __repr__(self):
         return '[%s(%d):%s]' % (self.name, self.size, repr(self._subnodes))
