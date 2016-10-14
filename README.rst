@@ -41,7 +41,7 @@ Installation
 
 Dependencies
 	``duviz.py`` is designed to run on UNIX platforms (like Linux and OS X),
-	where its dependencies (a Python 2.x interpreter and the ``du`` utility)
+	where its dependencies (a Python 2.x or 3.x interpreter and the ``du`` utility)
 	are typically available out of the box, so nothing to do on this front. Yay.
 	On Windows you'll be sad probably.
 
