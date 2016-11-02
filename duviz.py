@@ -30,6 +30,7 @@ import re
 import subprocess
 import sys
 import time
+import unicodedata
 
 
 # TODO: catch absence/failure of du/ls subprocesses
@@ -66,7 +67,7 @@ def terminal_size():
 
 
 ##############################################################################
-def bar(width, label, fill='-', left='[', right=']', one='|'):
+def bar(width, label, fill=u'-', left=u'[', right=u']', one=u'|'):
     """
     Helper function to render bar strings of certain width with a label.
 
@@ -81,11 +82,14 @@ def bar(width, label, fill='-', left='[', right=']', one='|'):
     """
     if width >= 2:
         label_width = width - len(left) - len(right)
-        return left + label[:label_width].center(label_width, fill) + right
+        # Normalize unicode so that unicode code point count corresponds to character count as much as possible
+        label = unicodedata.normalize('NFC', label)
+        b = left + label[:label_width].center(label_width, fill) + right
     elif width == 1:
-        return one
+        b = one
     else:
-        return ''
+        b = ''
+    return b
 
 
 ##############################################################################
@@ -101,14 +105,14 @@ def _human_readable_size(size, base, formats):
 def human_readable_byte_size(size, binary=False):
     """Return byte size as 11B, 12.34KB or 345.24MB (or binary: 12.34KiB, 345.24MiB)."""
     if binary:
-        return _human_readable_size(size, 1024, ['%dB', '%.2fKiB', '%.2fMiB', '%.2fGiB', '%.2fTiB'])
+        return _human_readable_size(size, 1024, [u'%dB', u'%.2fKiB', u'%.2fMiB', u'%.2fGiB', u'%.2fTiB'])
     else:
-        return _human_readable_size(size, 1000, ['%dB', '%.2fKB', '%.2fMB', '%.2fGB', '%.2fTB'])
+        return _human_readable_size(size, 1000, [u'%dB', u'%.2fKB', u'%.2fMB', u'%.2fGB', u'%.2fTB'])
 
 
 def human_readable_count(count):
     """Return inode count as 11, 12.34k or 345.24M."""
-    return _human_readable_size(count, 1000, ['%d', '%.2fk', '%.2fM', '%.2fG', '%.2fT'])
+    return _human_readable_size(count, 1000, [u'%d', u'%.2fk', u'%.2fM', u'%.2fG', u'%.2fT'])
 
 
 ##############################################################################
@@ -267,12 +271,12 @@ def _build_du_tree(directory, du_pipe, progress=None):
     dir_tree = DirectoryTreeNode(directory)
 
     for line in du_pipe:
-        mo = du_rep.match(line.decode('ascii'))
+        mo = du_rep.match(line.decode('utf-8'))
         # Size in bytes.
         size = int(mo.group(1)) * 1024
         path = mo.group(2)
         if progress:
-            progress('scanning %s' % path)
+            progress(u'scanning %s' % path)
         dir_tree.import_path(path, size)
     if progress:
         progress('')
@@ -305,7 +309,7 @@ def _build_inode_count_tree(directory, ls_pipe, progress=None):
     all_inodes = set()
 
     # Process data per directory block (separated by two newlines)
-    blocks = ls_pipe.read().decode('ascii').rstrip('\n').split('\n\n')
+    blocks = ls_pipe.read().decode('utf-8').rstrip('\n').split('\n\n')
     for i, dir_ls in enumerate(blocks):
         items = dir_ls.split('\n')
 
