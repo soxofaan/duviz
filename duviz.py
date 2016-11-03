@@ -67,7 +67,7 @@ def terminal_size():
 
 
 ##############################################################################
-def bar(width, label, fill=u'-', left=u'[', right=u']', one=u'|'):
+def bar(width, label, fill='-', left='[', right=']', one='|'):
     """
     Helper function to render bar strings of certain width with a label.
 
@@ -83,7 +83,8 @@ def bar(width, label, fill=u'-', left=u'[', right=u']', one=u'|'):
     if width >= 2:
         label_width = width - len(left) - len(right)
         # Normalize unicode so that unicode code point count corresponds to character count as much as possible
-        label = unicodedata.normalize('NFC', label)
+        # (note the u'%s' trick to convert to unicode in python 2/3 compatible way)
+        label = unicodedata.normalize('NFC', u'%s' % label)
         b = left + label[:label_width].center(label_width, fill) + right
     elif width == 1:
         b = one
@@ -105,14 +106,14 @@ def _human_readable_size(size, base, formats):
 def human_readable_byte_size(size, binary=False):
     """Return byte size as 11B, 12.34KB or 345.24MB (or binary: 12.34KiB, 345.24MiB)."""
     if binary:
-        return _human_readable_size(size, 1024, [u'%dB', u'%.2fKiB', u'%.2fMiB', u'%.2fGiB', u'%.2fTiB'])
+        return _human_readable_size(size, 1024, ['%dB', '%.2fKiB', '%.2fMiB', '%.2fGiB', '%.2fTiB'])
     else:
-        return _human_readable_size(size, 1000, [u'%dB', u'%.2fKB', u'%.2fMB', u'%.2fGB', u'%.2fTB'])
+        return _human_readable_size(size, 1000, ['%dB', '%.2fKB', '%.2fMB', '%.2fGB', '%.2fTB'])
 
 
 def human_readable_count(count):
     """Return inode count as 11, 12.34k or 345.24M."""
-    return _human_readable_size(count, 1000, [u'%d', u'%.2fk', u'%.2fM', u'%.2fG', u'%.2fT'])
+    return _human_readable_size(count, 1000, ['%d', '%.2fk', '%.2fM', '%.2fG', '%.2fT'])
 
 
 ##############################################################################
@@ -276,7 +277,7 @@ def _build_du_tree(directory, du_pipe, progress=None):
         size = int(mo.group(1)) * 1024
         path = mo.group(2)
         if progress:
-            progress(u'scanning %s' % path)
+            progress('scanning %s' % path)
         dir_tree.import_path(path, size)
     if progress:
         progress('')
