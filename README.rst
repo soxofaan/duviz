@@ -41,12 +41,18 @@ Dependencies
 	These things are typically available out of the box on a standard Unix-like system.
 
 
-Installation
+Installation (Pip)
 	``duviz`` can be installed through ``pip`` (e.g. in a virtual env)::
 
 		pip install duviz
 
 	which will install the ``duviz`` utility to the corresponding ``bin`` folder.
+
+Installation (Homebrew)
+	``duviz`` can also be installed with `Homebrew <https://brew.sh/>`_::
+
+		brew install https://raw.github.com/soxofaan/duviz/master/extra/homebrew/duviz.rb
+
 
 Without installation
 	The file ``duviz.py`` is also intended to be usable as a standalone Python script,
