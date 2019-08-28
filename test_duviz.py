@@ -1,8 +1,6 @@
 import textwrap
-import unittest
-
 import time
-
+import unittest
 from io import StringIO, BytesIO
 
 import duviz
@@ -118,15 +116,10 @@ class PathSplitTest(unittest.TestCase):
             self.assertEqual(expected, duviz.path_split(path, base))
 
 
-def _pipe(s):
-    """Helper to build a 'StringIO' to use as pipe input for testing"""
-    return BytesIO(textwrap.dedent(s).encode('ascii'))
-
-
 class BuildDuTreeTest(unittest.TestCase):
     def test_build_du_tree1(self):
         directory = 'path/to'
-        du_pipe = _pipe('''\
+        du_listing = textwrap.dedent('''\
             120     path/to/foo
             10      path/to/bar/a
             163     path/to/bar/b
@@ -134,38 +127,36 @@ class BuildDuTreeTest(unittest.TestCase):
             612     path/to/bar
             2       path/to/s p a c e s
             800     path/to
-        ''')
-        tree = duviz._build_du_tree(directory, du_pipe, progress=None)
-        result = tree.block_display(width=40)
+        ''').strip().split('\n')
+        tree = duviz.DuTree.from_du_listing(directory, du_listing)
+        result = duviz.render_tree(tree, width=40)
         expected = textwrap.dedent('''\
             ________________________________________
             [               path/to                ]
             [_______________819.20KB_______________]
-            [            bar             ][foo ]
-            [__________626.69KB__________][122.]
-            [       c       ][  b   ]|
-            [____368.64KB___][166.91]|
-        ''')
-        self.assertEqual(expected.split(), result.split())
+            [            bar             ][foo ]    
+            [__________626.69KB__________][122.]    
+            [       c       ][  b   ]|              
+            [____368.64KB___][166.91]|              ''')
+        self.assertEqual(expected.split('\n'), result)
 
     def test_build_du_tree2(self):
         directory = 'path/to'
-        du_pipe = _pipe('''\
+        du_listing = textwrap.dedent('''\
             1       path/to/A
             1       path/to/b
             2       path/to/C
             4       path/to
-        ''')
-        tree = duviz._build_du_tree(directory, du_pipe, progress=None)
-        result = tree.block_display(width=40)
+        ''').strip().split('\n')
+        tree = duviz.DuTree.from_du_listing(directory, du_listing)
+        result = duviz.render_tree(tree, width=40)
         expected = textwrap.dedent('''\
             ________________________________________
             [               path/to                ]
             [________________4.10KB________________]
             [        C         ][   b    ][   A    ]
-            [______2.05KB______][_1.02KB_][_1.02KB_]
-        ''')
-        self.assertEqual(expected.split(), result.split())
+            [______2.05KB______][_1.02KB_][_1.02KB_]''')
+        self.assertEqual(expected.split('\n'), result)
 
 
 class BuildInodeCountTreeBsdLsTest(unittest.TestCase):
@@ -173,20 +164,20 @@ class BuildInodeCountTreeBsdLsTest(unittest.TestCase):
     For BSD version of ls
     """
 
-    def assertInputOutput(self, directory, ls_pipe, expected, width=40):
-        tree = duviz._build_inode_count_tree(directory, ls_pipe, progress=None)
-        result = tree.block_display(width=width, size_renderer=duviz.human_readable_count)
-        self.assertEqual(expected.split('\n'), result.split('\n'))
+    def assertInputOutput(self, directory, ls_listing, expected, width=40):
+        tree = duviz.InodeTree.from_ls_listing(directory, ls_listing)
+        result = duviz.render_tree(tree, width=width)
+        self.assertEqual(expected.split('\n'), result)
 
     def test_build_inode_count_tree_simple(self):
         self.assertInputOutput(
             directory='path/to',
-            ls_pipe=_pipe('''\
+            ls_listing=textwrap.dedent('''\
                 222 .
                   1 ..
                 333 file.txt
                 444 anotherfile.txt
-            '''),
+            ''').strip(),
             expected=textwrap.dedent('''\
                 ________________________________________
                 [               path/to                ]
@@ -196,7 +187,7 @@ class BuildInodeCountTreeBsdLsTest(unittest.TestCase):
     def test_build_inode_count_tree_with_hardlink(self):
         self.assertInputOutput(
             directory='path/to',
-            ls_pipe=_pipe('''\
+            ls_listing=textwrap.dedent('''\
                 222 .
                   1 ..
                 333 file.txt
@@ -212,7 +203,7 @@ class BuildInodeCountTreeBsdLsTest(unittest.TestCase):
     def test_build_inode_count_tree_subdir(self):
         self.assertInputOutput(
             directory='path/to',
-            ls_pipe=_pipe('''\
+            ls_listing=textwrap.dedent('''\
                 222 .
                   1 ..
                 333 file.txt
@@ -236,7 +227,7 @@ class BuildInodeCountTreeBsdLsTest(unittest.TestCase):
     def test_build_inode_count_tree_various(self):
         self.assertInputOutput(
             directory='path/to',
-            ls_pipe=_pipe('''\
+            ls_listing=textwrap.dedent('''\
                 2395 .
                 2393 ..
                 2849 bar
@@ -271,10 +262,10 @@ class BuildInodeCountTreeGnuLsTest(BuildInodeCountTreeBsdLsTest):
     For GNU version of ls
     """
 
-    def assertInputOutput(self, directory, ls_pipe, expected, width=40):
+    def assertInputOuput(self, directory, ls_listing, expected, width=40):
         # GNU ls adds an additional line
-        ls_pipe = BytesIO(directory.encode('ascii') + b':\n' + ls_pipe.getvalue())
-        BuildInodeCountTreeBsdLsTest.assertInputOutput(self, directory, ls_pipe, expected, width)
+        ls_listing = [directory + ':'] + ls_listing
+        BuildInodeCountTreeBsdLsTest.assertInputOutput(self, directory, ls_listing, expected, width)
 
 
 class ProgressTest(unittest.TestCase):
