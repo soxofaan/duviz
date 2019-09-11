@@ -1,4 +1,3 @@
-# coding=utf-8
 import textwrap
 import unittest
 
@@ -19,25 +18,25 @@ class BarTest(unittest.TestCase):
         self.assertEqual(res, '')
 
     def test_default(self):
-        res = duviz.bar(10, u'abcd')
-        self.assertEqual(res, u'[--abcd--]')
+        res = duviz.bar(10, 'abcd')
+        self.assertEqual(res, '[--abcd--]')
 
     def test_left_and_right(self):
-        res = duviz.bar(12, u'abcd', left='<<', right='**')
-        self.assertEqual(res, u'<<--abcd--**')
+        res = duviz.bar(12, 'abcd', left='<<', right='**')
+        self.assertEqual(res, '<<--abcd--**')
 
     def test_fill(self):
-        res = duviz.bar(10, u'abcd', fill='+')
-        self.assertEqual(res, u'[++abcd++]')
+        res = duviz.bar(10, 'abcd', fill='+')
+        self.assertEqual(res, '[++abcd++]')
 
     def test_unicode(self):
-        res = duviz.bar(10, u'åßc∂', fill='+')
-        self.assertEqual(res, u'[++åßc∂++]')
+        res = duviz.bar(10, 'åßc∂', fill='+')
+        self.assertEqual(res, '[++åßc∂++]')
 
     def test_unicode2(self):
         label = b'\xc3\xb8o\xcc\x82o\xcc\x88o\xcc\x81a\xcc\x8a'.decode('utf8')
         res = duviz.bar(9, label, fill='+')
-        self.assertEqual(res, u'[+øôöóå+]')
+        self.assertEqual(res, '[+øôöóå+]')
 
 
 class HumanReadableSizeTest(unittest.TestCase):
@@ -126,7 +125,7 @@ def _pipe(s):
 
 class BuildDuTreeTest(unittest.TestCase):
     def test_build_du_tree1(self):
-        directory = u'path/to'
+        directory = 'path/to'
         du_pipe = _pipe('''\
             120     path/to/foo
             10      path/to/bar/a
@@ -150,7 +149,7 @@ class BuildDuTreeTest(unittest.TestCase):
         self.assertEqual(expected.split(), result.split())
 
     def test_build_du_tree2(self):
-        directory = u'path/to'
+        directory = 'path/to'
         du_pipe = _pipe('''\
             1       path/to/A
             1       path/to/b
@@ -181,7 +180,7 @@ class BuildInodeCountTreeBsdLsTest(unittest.TestCase):
 
     def test_build_inode_count_tree_simple(self):
         self.assertInputOuput(
-            directory=u'path/to',
+            directory='path/to',
             ls_pipe=_pipe('''\
                 222 .
                   1 ..
@@ -196,7 +195,7 @@ class BuildInodeCountTreeBsdLsTest(unittest.TestCase):
 
     def test_build_inode_count_tree_with_hardlink(self):
         self.assertInputOuput(
-            directory=u'path/to',
+            directory='path/to',
             ls_pipe=_pipe('''\
                 222 .
                   1 ..
@@ -212,7 +211,7 @@ class BuildInodeCountTreeBsdLsTest(unittest.TestCase):
 
     def test_build_inode_count_tree_subdir(self):
         self.assertInputOuput(
-            directory=u'path/to',
+            directory='path/to',
             ls_pipe=_pipe('''\
                 222 .
                   1 ..
@@ -236,7 +235,7 @@ class BuildInodeCountTreeBsdLsTest(unittest.TestCase):
 
     def test_build_inode_count_tree_various(self):
         self.assertInputOuput(
-            directory=u'path/to',
+            directory='path/to',
             ls_pipe=_pipe('''\
                 2395 .
                 2393 ..

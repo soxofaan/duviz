@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding=utf-8
 
 """
 Command line tool for visualization of the disk space usage of a directory
@@ -41,7 +40,7 @@ def terminal_size():
         answer = fcntl.ioctl(file_descriptor, termios.TIOCGWINSZ, dummy_string)
         # Unpack answer to height and width values.
         height, width = struct.unpack('HH', answer)
-    except (ImportError, IOError):
+    except (ImportError, OSError):
         try:
             # Try to get size from environment variables.
             height, width = int(os.environ['LINES']), int(os.environ['COLUMNS'])
@@ -68,12 +67,12 @@ def bar(width, label, fill='-', left='[', right=']', one='|'):
         label_width = width - len(left) - len(right)
         # Normalize unicode so that unicode code point count corresponds to character count as much as possible
         # (note the u'%s' trick to convert to unicode in python 2/3 compatible way)
-        label = unicodedata.normalize('NFC', u'%s' % label)
+        label = unicodedata.normalize('NFC', '%s' % label)
         b = left + label[:label_width].center(label_width, fill) + right
     elif width == 1:
         b = one
     else:
-        b = u''
+        b = ''
     return b
 
 
@@ -122,7 +121,7 @@ def path_split(path, base=''):
     return items
 
 
-class DirectoryTreeNode(object):
+class DirectoryTreeNode:
     """
     Recursive data structure corresponding with node in a directory tree.
     Holds the name of the node, its size (including subdirectories) and the subdirectories.
