@@ -4,11 +4,7 @@ import unittest
 
 import time
 
-try:
-    from StringIO import StringIO
-    BytesIO = StringIO
-except ImportError:
-    from io import StringIO, BytesIO
+from io import StringIO, BytesIO
 
 import duviz
 
