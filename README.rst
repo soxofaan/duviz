@@ -36,7 +36,7 @@ Features
   No installation required: put it where you want it. Use it how you want it.
 - Only uses standard library and just depends on ``du`` and ``ls`` utilities,
   which are available out of the box on a typical Unix platform (Linux, macOS)
-- Works with Python 2 and 3.
+- Works with Python 3.
 - Speed. No need to wait for a GUI tool to get up and running, let alone scanning your disk.
   The hard work is done by ``du`` (or ``ls``), which run an C-speed.
 - Progress reporting while you wait. Be hypnotized!
