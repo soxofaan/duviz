@@ -5,12 +5,12 @@
 What is duviz?
 --------------
 
-``duviz`` is a command-line utility written in Python to visualize disk space usage.
+``duviz`` is a command-line tool to visualize disk space usage.
 
 It's like the plethora of desktop applications and widgets
 (e.g. Filelight, DaisyDisk, WinDirStat, JDiskReport, TreeSize, SpaceSniffer, ...),
 but instead of a fancy GUI with animated pie charts and shaded boxes
-you get a funky "ASCII art style hierarchical tree of bars".
+you get a funky "ASCII art style hierarchical tree of bars" in your shell.
 If that didn't make a lot of sense to you, look at this example of this ``/opt`` folder::
 
     $ duviz /opt
@@ -32,11 +32,10 @@ If that didn't make a lot of sense to you, look at this example of this ``/opt``
 Features
 --------
 
-- Basically there is just one python script ``duviz.py``.
+- Basically it consists of just one Python 3 script ``duviz.py``.
   No installation required: put it where you want it. Use it how you want it.
 - Only uses standard library and just depends on ``du`` and ``ls`` utilities,
   which are available out of the box on a typical Unix platform (Linux, macOS)
-- Works with Python 3.
 - Speed. No need to wait for a GUI tool to get up and running, let alone scanning your disk.
   The hard work is done by ``du`` (or ``ls``), which run an C-speed.
 - Progress reporting while you wait. Be hypnotized!
@@ -67,6 +66,13 @@ No installation
         python path/to/duviz.py
 
 
+Python 2 Support
+~~~~~~~~~~~~~~~~
+
+``duviz`` was originally (2009) a Python 2 script, and started supporting Python 3 around 2016.
+With the end of life of Python 2 nearing in 2019, support for Python 2 was dropped.
+The Python 2 compatible version can be found in the ``py2-compatible`` branch (last release: 1.1.1).
+
 Usage
 -----
 
@@ -76,3 +82,4 @@ If you specify one or more directories, it will render the usage of those direct
 Instead of size in bytes, you can also get inode usage: just use the option ``--inodes`` (or ``-i`` in short).
 
 Run it with option ``--help`` for more options.
+
