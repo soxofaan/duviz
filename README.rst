@@ -5,7 +5,7 @@
 What is duviz?
 --------------
 
-``duviz`` is a command-line tool to visualize disk space usage.
+``duviz`` is a (Python 3) command-line tool to visualize disk space usage.
 
 It's like the plethora of desktop applications and widgets
 (e.g. Filelight, DaisyDisk, WinDirStat, JDiskReport, TreeSize, SpaceSniffer, ...),

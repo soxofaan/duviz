@@ -66,8 +66,7 @@ def bar(width, label, fill='-', left='[', right=']', one='|'):
     if width >= 2:
         label_width = width - len(left) - len(right)
         # Normalize unicode so that unicode code point count corresponds to character count as much as possible
-        # (note the u'%s' trick to convert to unicode in python 2/3 compatible way)
-        label = unicodedata.normalize('NFC', '%s' % label)
+        label = unicodedata.normalize('NFC', label)
         b = left + label[:label_width].center(label_width, fill) + right
     elif width == 1:
         b = one
