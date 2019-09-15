@@ -17,6 +17,7 @@ import subprocess
 import sys
 import time
 import unicodedata
+from typing import List
 
 
 # TODO: catch absence/failure of du/ls subprocesses
@@ -24,53 +25,6 @@ import unicodedata
 # TODO: option to sort alphabetically (instead of on size)
 # TODO: emoji based rendering
 # TODO: option to use colors?
-
-
-def bar(width, label, fill='-', left='[', right=']', one='|'):
-    """
-    Helper function to render bar strings of certain width with a label.
-
-    @param width the desired total width
-    @param label the label to be rendered (will be clipped if too long).
-    @param fill the fill character to fill empty space
-    @param left the symbol to use at the left of the bar
-    @param right the symbol to use at the right of the bar
-    @param one the character to use when the bar should be only one character wide
-
-    @return rendered string
-    """
-    if width >= 2:
-        label_width = width - len(left) - len(right)
-        # Normalize unicode so that unicode code point count corresponds to character count as much as possible
-        label = unicodedata.normalize('NFC', label)
-        b = left + label[:label_width].center(label_width, fill) + right
-    elif width == 1:
-        b = one
-    else:
-        b = ''
-    return b
-
-
-def _human_readable_size(size, base, formats):
-    """Helper function to render counts and sizes in a easily readable format."""
-    for f in formats[:-1]:
-        if round(size, 2) < base:
-            return f % size
-        size = float(size) / base
-    return formats[-1] % size
-
-
-def human_readable_byte_size(size, binary=False):
-    """Return byte size as 11B, 12.34KB or 345.24MB (or binary: 12.34KiB, 345.24MiB)."""
-    if binary:
-        return _human_readable_size(size, 1024, ['%dB', '%.2fKiB', '%.2fMiB', '%.2fGiB', '%.2fTiB'])
-    else:
-        return _human_readable_size(size, 1000, ['%dB', '%.2fKB', '%.2fMB', '%.2fGB', '%.2fTB'])
-
-
-def human_readable_count(count):
-    """Return inode count as 11, 12.34k or 345.24M."""
-    return _human_readable_size(count, 1000, ['%d', '%.2fk', '%.2fM', '%.2fG', '%.2fT'])
 
 
 def path_split(path, base=''):
@@ -126,9 +80,6 @@ class SizeTree:
             cursor.size = size
         return tree
 
-    def render_size(self):
-        return human_readable_count(self.size)
-
     def __lt__(self, other):
         # We only implement rich comparison method __lt__ so make sorting work.
         return (self.size, self.name) < (other.size, other.name)
@@ -179,9 +130,6 @@ class DuTree(SizeTree):
                 yield path_split(path, root)[1:], 1024 * int(kb)
 
         return cls.from_path_size_pairs(root=root, pairs=pairs(du_listing))
-
-    def render_size(self):
-        return human_readable_byte_size(self.size)
 
 
 class InodeTree(SizeTree):
@@ -239,44 +187,100 @@ class InodeTree(SizeTree):
         return tree
 
 
-def render_tree(tree, width, max_depth=5, top=True):
-    if width < 1 or max_depth < 0:
-        return ''
+class SizeFormatter:
+    """Render a (byte) count in compact human readable way: 12, 34k, 56M, ..."""
 
-    lines = []
+    def __init__(self, base: int, formats: List[str]):
+        self.base = base
+        self.formats = formats
 
-    if top:
-        lines.append('_' * width)
+    def format(self, size: int) -> str:
+        for f in self.formats[:-1]:
+            if round(size, 2) < self.base:
+                return f % size
+            size = float(size) / self.base
+        return self.formats[-1] % size
 
-    # Render current dir.
-    lines.append(bar(width, tree.name, fill=' '))
-    lines.append(bar(width, tree.render_size(), fill='_'))
 
-    # Render children.
-    # TODO option to sort alphabetically
-    children = sorted(tree.children.values(), reverse=True)
-    if len(children) > 0:
-        # Render each child (and subsequent sub-children).
-        subtrees = []
-        cumulative_size = 0
-        last_col = 0
-        for child in children:
-            cumulative_size += child.size
-            curr_col = int(float(width * cumulative_size) / tree.size)
-            subtrees.append(render_tree(child, curr_col - last_col, max_depth - 1, top=False))
-            last_col = curr_col
-        # Assemble blocks.
-        height = max(len(t) for t in subtrees)
-        for i in range(height):
-            line = ''
-            for subtree in subtrees:
-                if i < len(subtree):
-                    line += subtree[i]
-                elif len(subtree) > 0:
-                    line += ' ' * len(subtree[0])
-            lines.append(line.ljust(width))
+SIZE_FORMATTER_COUNT = SizeFormatter(1000, ['%d', '%.2fk', '%.2fM', '%.2fG', '%.2fT'])
+SIZE_FORMATTER_BYTES = SizeFormatter(1000, ['%dB', '%.2fKB', '%.2fMB', '%.2fGB', '%.2fTB'])
+SIZE_FORMATTER_BYTES_BINARY = SizeFormatter(1024, ['%dB', '%.2fKiB', '%.2fMiB', '%.2fGiB', '%.2fTiB'])
 
-    return lines
+
+class TreeRenderer:
+    """Base class for SizeTree renderers"""
+
+    def __init__(self, max_depth: int = 5, size_formatter: SizeFormatter = SIZE_FORMATTER_COUNT):
+        self.max_depth = max_depth
+        self._size_formatter = size_formatter
+
+    def render(self, tree: SizeTree, width: int) -> List[str]:
+        raise NotImplementedError
+
+    def bar(self, label: str, width: int, fill='-', left='[', right=']', one='|') -> str:
+        """
+        Render a label as string of certain width with given left, right part and fill.
+
+        @param label the label to be rendered (will be clipped if too long).
+        @param width the desired total width
+        @param fill the fill character to fill empty space
+        @param left the symbol to use at the left of the bar
+        @param right the symbol to use at the right of the bar
+        @param one the character to use when the bar should be only one character wide
+
+        @return rendered string
+        """
+        if width >= 2:
+            label_width = width - len(left) - len(right)
+            # Normalize unicode so that unicode code point count corresponds to character count as much as possible
+            label = unicodedata.normalize('NFC', label)
+            b = left + label[:label_width].center(label_width, fill) + right
+        elif width == 1:
+            b = one
+        else:
+            b = ''
+        return b
+
+
+class AsciiBarRenderer(TreeRenderer):
+
+    def render(self, tree: SizeTree, width: int) -> List[str]:
+        return ['_' * width] + self._render(tree, width, self.max_depth)
+
+    def _render(self, tree: SizeTree, width: int, depth: int) -> List[str]:
+        lines = []
+        if width < 1 or depth < 0:
+            return lines
+
+        # Render current dir.
+        lines.append(self.bar(tree.name, width, fill=' '))
+        lines.append(self.bar(self._size_formatter.format(tree.size), width, fill='_'))
+
+        # Render children.
+        # TODO option to sort alphabetically
+        children = sorted(tree.children.values(), reverse=True)
+        if len(children) > 0:
+            # Render each child (and subsequent sub-children).
+            subtrees = []
+            cumulative_size = 0
+            last_col = 0
+            for child in children:
+                cumulative_size += child.size
+                curr_col = int(float(width * cumulative_size) / tree.size)
+                subtrees.append(self._render(child, curr_col - last_col, depth - 1))
+                last_col = curr_col
+            # Assemble blocks.
+            height = max(len(t) for t in subtrees)
+            for i in range(height):
+                line = ''
+                for subtree in subtrees:
+                    if i < len(subtree):
+                        line += subtree[i]
+                    elif len(subtree) > 0:
+                        line += ' ' * len(subtree[0])
+                lines.append(line.ljust(width))
+
+        return lines
 
 
 def get_progress_callback(stream=sys.stdout, interval=.2, terminal_width=80):
@@ -357,10 +361,14 @@ def main():
     for directory in paths:
         if opts.inode_count:
             tree = InodeTree.from_ls(root=directory, progress=feedback)
+            size_formatter = SIZE_FORMATTER_COUNT
         else:
             tree = DuTree.from_du(root=directory, progress=feedback, one_filesystem=opts.onefilesystem,
                                   dereference=opts.dereference)
-        print("\n".join(render_tree(tree, width=opts.display_width, max_depth=opts.max_depth)))
+            size_formatter = SIZE_FORMATTER_BYTES
+
+        renderer = AsciiBarRenderer(max_depth=opts.max_depth, size_formatter=size_formatter)
+        print("\n".join(renderer.render(tree, width=opts.display_width)))
 
 
 if __name__ == '__main__':

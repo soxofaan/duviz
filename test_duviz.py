@@ -1,44 +1,44 @@
 import textwrap
 import time
 import unittest
-from io import StringIO, BytesIO
+from io import StringIO
 
 import duviz
 
 
-class BarTest(unittest.TestCase):
-    def test_one(self):
-        res = duviz.bar(1, 'x', one='y')
+class TreeRendererBarTest(unittest.TestCase):
+    def test_bar_one(self):
+        res = duviz.TreeRenderer().bar('x', 1, one='y')
         self.assertEqual(res, 'y')
 
     def test_zero(self):
-        res = duviz.bar(0, 'x')
+        res = duviz.TreeRenderer().bar('x', 0)
         self.assertEqual(res, '')
 
     def test_default(self):
-        res = duviz.bar(10, 'abcd')
+        res = duviz.TreeRenderer().bar('abcd', 10)
         self.assertEqual(res, '[--abcd--]')
 
     def test_left_and_right(self):
-        res = duviz.bar(12, 'abcd', left='<<', right='**')
+        res = duviz.TreeRenderer().bar('abcd', 12, left='<<', right='**')
         self.assertEqual(res, '<<--abcd--**')
 
     def test_fill(self):
-        res = duviz.bar(10, 'abcd', fill='+')
+        res = duviz.TreeRenderer().bar('abcd', 10, fill='+')
         self.assertEqual(res, '[++abcd++]')
 
     def test_unicode(self):
-        res = duviz.bar(10, 'åßc∂', fill='+')
+        res = duviz.TreeRenderer().bar('åßc∂', 10, fill='+')
         self.assertEqual(res, '[++åßc∂++]')
 
     def test_unicode2(self):
         label = b'\xc3\xb8o\xcc\x82o\xcc\x88o\xcc\x81a\xcc\x8a'.decode('utf8')
-        res = duviz.bar(9, label, fill='+')
+        res = duviz.TreeRenderer().bar(label, 9, fill='+')
         self.assertEqual(res, '[+øôöóå+]')
 
 
-class HumanReadableSizeTest(unittest.TestCase):
-    def test_human_readable_count(self):
+class SizeFormatterTest(unittest.TestCase):
+    def test_format_count(self):
         data = [
             (0, '0'),
             (10, '10'),
@@ -53,9 +53,9 @@ class HumanReadableSizeTest(unittest.TestCase):
             (1000000000000, '1.00T'),
         ]
         for x, expected in data:
-            self.assertEqual(expected, duviz.human_readable_count(x))
+            self.assertEqual(expected, duviz.SIZE_FORMATTER_COUNT.format(x))
 
-    def test_human_readable_byte_size(self):
+    def test_bytes(self):
         data = [
             (0, '0B'),
             (10, '10B'),
@@ -68,9 +68,9 @@ class HumanReadableSizeTest(unittest.TestCase):
             (1000000, '1.00MB'),
         ]
         for x, expected in data:
-            self.assertEqual(expected, duviz.human_readable_byte_size(x))
+            self.assertEqual(expected, duviz.SIZE_FORMATTER_BYTES.format(x))
 
-    def test_human_readable_byte_size_binary(self):
+    def test_bytes_binary(self):
         data = [
             (0, '0B'),
             (10, '10B'),
@@ -85,7 +85,7 @@ class HumanReadableSizeTest(unittest.TestCase):
             (1024 * 1024 * 1024 * 1024, '1.00TiB'),
         ]
         for x, expected in data:
-            self.assertEqual(expected, duviz.human_readable_byte_size(x, True))
+            self.assertEqual(expected, duviz.SIZE_FORMATTER_BYTES_BINARY.format(x))
 
 
 class PathSplitTest(unittest.TestCase):
@@ -129,7 +129,8 @@ class BuildDuTreeTest(unittest.TestCase):
             800     path/to
         ''').strip().split('\n')
         tree = duviz.DuTree.from_du_listing(directory, du_listing)
-        result = duviz.render_tree(tree, width=40)
+        renderer = duviz.AsciiBarRenderer(size_formatter=duviz.SIZE_FORMATTER_BYTES)
+        result = renderer.render(tree, width=40)
         expected = textwrap.dedent('''\
             ________________________________________
             [               path/to                ]
@@ -149,7 +150,8 @@ class BuildDuTreeTest(unittest.TestCase):
             4       path/to
         ''').strip().split('\n')
         tree = duviz.DuTree.from_du_listing(directory, du_listing)
-        result = duviz.render_tree(tree, width=40)
+        renderer = duviz.AsciiBarRenderer(size_formatter=duviz.SIZE_FORMATTER_BYTES)
+        result = renderer.render(tree, width=40)
         expected = textwrap.dedent('''\
             ________________________________________
             [               path/to                ]
@@ -166,7 +168,8 @@ class BuildInodeCountTreeBsdLsTest(unittest.TestCase):
 
     def assertInputOutput(self, directory, ls_listing, expected, width=40):
         tree = duviz.InodeTree.from_ls_listing(directory, ls_listing)
-        result = duviz.render_tree(tree, width=width)
+        renderer = duviz.AsciiBarRenderer(size_formatter=duviz.SIZE_FORMATTER_COUNT)
+        result = renderer.render(tree, width=width)
         self.assertEqual(expected.split('\n'), result)
 
     def test_build_inode_count_tree_simple(self):
