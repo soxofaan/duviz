@@ -36,6 +36,27 @@ class TreeRendererBarTest(unittest.TestCase):
         res = duviz.TreeRenderer().bar(label, 9, fill='+')
         self.assertEqual(res, '[+øôöóå+]')
 
+    def test_padding(self):
+        expecteds = [
+            '',
+            '|',
+            '[]',
+            '[f]',
+            '[fo]',
+            '[foo]',
+            '[_foo]',
+            '[_foo_]',
+            '[_foo_-]',
+            '[-_foo_-]',
+            '[-_foo_--]',
+            '[--_foo_--]',
+            '[--_foo_---]',
+            '[---_foo_---]',
+        ]
+        tr = duviz.TreeRenderer()
+        for i, expected in enumerate(expecteds):
+            self.assertEqual(expected, tr.bar('foo', i, fill="-", label_padding='_'))
+
 
 class SizeFormatterTest(unittest.TestCase):
     def test_format_count(self):

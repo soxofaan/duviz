@@ -217,7 +217,7 @@ class TreeRenderer:
     def render(self, tree: SizeTree, width: int) -> List[str]:
         raise NotImplementedError
 
-    def bar(self, label: str, width: int, fill='-', left='[', right=']', one='|') -> str:
+    def bar(self, label: str, width: int, fill='-', left='[', right=']', one='|', label_padding='') -> str:
         """
         Render a label as string of certain width with given left, right part and fill.
 
@@ -227,14 +227,17 @@ class TreeRenderer:
         @param left the symbol to use at the left of the bar
         @param right the symbol to use at the right of the bar
         @param one the character to use when the bar should be only one character wide
+        @param label_padding additional padding for the label
 
         @return rendered string
         """
         if width >= 2:
-            label_width = width - len(left) - len(right)
+            inner_width = width - len(left) - len(right)
             # Normalize unicode so that unicode code point count corresponds to character count as much as possible
-            label = unicodedata.normalize('NFC', label)
-            b = left + label[:label_width].center(label_width, fill) + right
+            label = unicodedata.normalize('NFC',  label)
+            if len(label) < inner_width:
+                label = label_padding + label + label_padding
+            b = left + label[:inner_width].center(inner_width, fill) + right
         elif width == 1:
             b = one
         else:
@@ -243,9 +246,37 @@ class TreeRenderer:
 
 
 class AsciiBarRenderer(TreeRenderer):
+    """
+    Render a SizeTree with ASCII bars. Each node is a two line bar with name and size.
+    Example:
+
+        ________________________________________
+        [                 foo                  ]
+        [_______________49.15KB________________]
+        [          bar           ][    baz     ]
+        [________32.77KB_________][__16.38KB___]
+    """
+
+    _top_line_fill = '_'
 
     def render(self, tree: SizeTree, width: int) -> List[str]:
-        return ['_' * width] + self._render(tree, width, self.max_depth)
+        lines = []
+        if self._top_line_fill:
+            lines.append(self._top_line_fill * width)
+        return lines + self._render(tree, width, self.max_depth)
+
+    def render_node(self, node: SizeTree, width: int) -> List[str]:
+        """Render a single node"""
+        return [
+            self.bar(
+                label=node.name,
+                width=width, fill=' ', left='[', right=']', one='|'
+            ),
+            self.bar(
+                label=self._size_formatter.format(node.size),
+                width=width, fill='_', left='[', right=']', one='|'
+            )
+        ]
 
     def _render(self, tree: SizeTree, width: int, depth: int) -> List[str]:
         lines = []
@@ -253,8 +284,7 @@ class AsciiBarRenderer(TreeRenderer):
             return lines
 
         # Render current dir.
-        lines.append(self.bar(tree.name, width, fill=' '))
-        lines.append(self.bar(self._size_formatter.format(tree.size), width, fill='_'))
+        lines.extend(self.render_node(node=tree, width=width))
 
         # Render children.
         # TODO option to sort alphabetically
@@ -281,6 +311,25 @@ class AsciiBarRenderer(TreeRenderer):
                 lines.append(line.ljust(width))
 
         return lines
+
+
+class AsciiSingleLineBarRenderer(AsciiBarRenderer):
+    """
+    Render a SizeTree with one-line ASCII bars.
+    Example:
+
+        [........... foo/: 61.44KB ............]
+        [.... bar: 36.86KB ....][baz: 20.48K]
+    """
+    _top_line_fill = None
+
+    def render_node(self, node: SizeTree, width: int) -> List[str]:
+        return [
+            self.bar(
+                label="{n}: {s}".format(n=node.name, s=self._size_formatter.format(node.size)),
+                width=width, fill='.', left='[', right=']', one='|', label_padding=' '
+            )
+        ]
 
 
 def get_progress_callback(stream=sys.stdout, interval=.2, terminal_width=80):
@@ -338,6 +387,11 @@ def main():
         action='store_false', dest='show_progress', default=True,
         help='disable progress reporting'
     )
+    cliparser.add_option(
+        '--one-line',
+        action='store_true', dest='one_line', default=False,
+        help='Show one line bars instead of two line bars'
+    )
 
     (opts, args) = cliparser.parse_args()
 
@@ -367,7 +421,11 @@ def main():
                                   dereference=opts.dereference)
             size_formatter = SIZE_FORMATTER_BYTES
 
-        renderer = AsciiBarRenderer(max_depth=opts.max_depth, size_formatter=size_formatter)
+        if opts.one_line:
+            renderer = AsciiSingleLineBarRenderer(max_depth=opts.max_depth, size_formatter=size_formatter)
+        else:
+            renderer = AsciiBarRenderer(max_depth=opts.max_depth, size_formatter=size_formatter)
+
         print("\n".join(renderer.render(tree, width=opts.display_width)))
 
 
