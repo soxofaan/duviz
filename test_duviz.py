@@ -8,7 +8,7 @@ import duviz
 
 class TreeRendererBarTest(unittest.TestCase):
     def test_bar_one(self):
-        res = duviz.TreeRenderer().bar('x', 1, one='y')
+        res = duviz.TreeRenderer().bar('x', 1, small='y')
         self.assertEqual(res, 'y')
 
     def test_zero(self):
@@ -56,6 +56,67 @@ class TreeRendererBarTest(unittest.TestCase):
         tr = duviz.TreeRenderer()
         for i, expected in enumerate(expecteds):
             self.assertEqual(expected, tr.bar('foo', i, fill="-", label_padding='_'))
+
+    def test_no_left_right(self):
+        expecteds = [
+            '',
+            'f',
+            'fo',
+            'foo',
+            '_foo',
+            '_foo_',
+            '_foo_-',
+            '-_foo_-',
+        ]
+        tr = duviz.TreeRenderer()
+        for i, expected in enumerate(expecteds):
+            self.assertEqual(expected, tr.bar('foo', i, left='', right='', small='*', fill="-", label_padding='_', ))
+
+    def test_small(self):
+        expecteds = [
+            '',
+            '=',
+            '==',
+            '===',
+            '[[]]',
+            '[[f]]',
+            '[[fo]]',
+            '[[foo]]',
+            '[[_foo]]',
+            '[[_foo_]]',
+            '[[_foo_-]]',
+            '[[-_foo_-]]',
+        ]
+        tr = duviz.TreeRenderer()
+        for i, expected in enumerate(expecteds):
+            bar = tr.bar('foo', i, left='[[', right=']]', small='=', fill="-", label_padding='_', )
+            self.assertEqual(expected, bar)
+
+    def test_small_multiple(self):
+        expecteds = [
+            '',
+            '#',
+            '#=',
+            '#=+',
+            '#=+#',
+            '#=+#=',
+            '[<[]>]',
+            '[<[f]>]',
+        ]
+        tr = duviz.TreeRenderer()
+        for i, expected in enumerate(expecteds):
+            bar = tr.bar('f', i, left='[<[', right=']>]', small='#=+', fill="-", label_padding='_', )
+            self.assertEqual(expected, bar)
+
+    def test_ascii_double_line_bar_renderer(self):
+        tree = duviz.SizeTree("foo", 123)
+        renderer = duviz.AsciiDoubleLineBarRenderer()
+        lines = renderer.render(tree, width=10)
+        self.assertEqual([
+            "__________",
+            "[  foo   ]",
+            "[__123___]"
+        ], lines)
 
 
 class SizeFormatterTest(unittest.TestCase):
@@ -150,7 +211,7 @@ class BuildDuTreeTest(unittest.TestCase):
             800     path/to
         ''').strip().split('\n')
         tree = duviz.DuTree.from_du_listing(directory, du_listing)
-        renderer = duviz.AsciiBarRenderer(size_formatter=duviz.SIZE_FORMATTER_BYTES)
+        renderer = duviz.AsciiDoubleLineBarRenderer(size_formatter=duviz.SIZE_FORMATTER_BYTES)
         result = renderer.render(tree, width=40)
         expected = textwrap.dedent('''\
             ________________________________________
@@ -171,7 +232,7 @@ class BuildDuTreeTest(unittest.TestCase):
             4       path/to
         ''').strip().split('\n')
         tree = duviz.DuTree.from_du_listing(directory, du_listing)
-        renderer = duviz.AsciiBarRenderer(size_formatter=duviz.SIZE_FORMATTER_BYTES)
+        renderer = duviz.AsciiDoubleLineBarRenderer(size_formatter=duviz.SIZE_FORMATTER_BYTES)
         result = renderer.render(tree, width=40)
         expected = textwrap.dedent('''\
             ________________________________________
@@ -189,7 +250,7 @@ class BuildInodeCountTreeBsdLsTest(unittest.TestCase):
 
     def assertInputOutput(self, directory, ls_listing, expected, width=40):
         tree = duviz.InodeTree.from_ls_listing(directory, ls_listing)
-        renderer = duviz.AsciiBarRenderer(size_formatter=duviz.SIZE_FORMATTER_COUNT)
+        renderer = duviz.AsciiDoubleLineBarRenderer(size_formatter=duviz.SIZE_FORMATTER_COUNT)
         result = renderer.render(tree, width=width)
         self.assertEqual(expected.split('\n'), result)
 

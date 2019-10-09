@@ -10,6 +10,7 @@ Website: http://soxofaan.github.io/duviz/
 """
 
 import contextlib
+import itertools
 import os
 import re
 import shutil
@@ -23,8 +24,6 @@ from typing import List
 # TODO: catch absence/failure of du/ls subprocesses
 # TODO: how to handle unreadable subdirs in du/ls?
 # TODO: option to sort alphabetically (instead of on size)
-# TODO: emoji based rendering
-# TODO: option to use colors?
 
 
 def path_split(path, base=''):
@@ -217,7 +216,7 @@ class TreeRenderer:
     def render(self, tree: SizeTree, width: int) -> List[str]:
         raise NotImplementedError
 
-    def bar(self, label: str, width: int, fill='-', left='[', right=']', one='|', label_padding='') -> str:
+    def bar(self, label: str, width: int, fill='-', left='[', right=']', small='|', label_padding='') -> str:
         """
         Render a label as string of certain width with given left, right part and fill.
 
@@ -226,28 +225,28 @@ class TreeRenderer:
         @param fill the fill character to fill empty space
         @param left the symbol to use at the left of the bar
         @param right the symbol to use at the right of the bar
-        @param one the character to use when the bar should be only one character wide
+        @param small the character to use when the bar is too small
         @param label_padding additional padding for the label
 
         @return rendered string
         """
-        if width >= 2:
-            inner_width = width - len(left) - len(right)
+        inner_width = width - len(left) - len(right)
+        if inner_width >= 0:
             # Normalize unicode so that unicode code point count corresponds to character count as much as possible
-            label = unicodedata.normalize('NFC',  label)
+            label = unicodedata.normalize('NFC', label)
             if len(label) < inner_width:
                 label = label_padding + label + label_padding
             b = left + label[:inner_width].center(inner_width, fill) + right
-        elif width == 1:
-            b = one
         else:
-            b = ''
+            b = (small * width)[:width]
         return b
 
 
-class AsciiBarRenderer(TreeRenderer):
+class AsciiDoubleLineBarRenderer(TreeRenderer):
     """
-    Render a SizeTree with ASCII bars. Each node is a two line bar with name and size.
+    Render a SizeTree with two line ASCII bars,
+    containing name and size of each node.
+
     Example:
 
         ________________________________________
@@ -270,11 +269,11 @@ class AsciiBarRenderer(TreeRenderer):
         return [
             self.bar(
                 label=node.name,
-                width=width, fill=' ', left='[', right=']', one='|'
+                width=width, fill=' ', left='[', right=']', small='|'
             ),
             self.bar(
                 label=self._size_formatter.format(node.size),
-                width=width, fill='_', left='[', right=']', one='|'
+                width=width, fill='_', left='[', right=']', small='|'
             )
         ]
 
@@ -290,7 +289,7 @@ class AsciiBarRenderer(TreeRenderer):
         # TODO option to sort alphabetically
         children = sorted(tree.children.values(), reverse=True)
         if children:
-            # Render each child (and subsequent sub-children).
+            # Render each child as a subtree, which is a list of lines.
             subtrees = []
             cumulative_size = 0
             last_col = 0
@@ -307,15 +306,19 @@ class AsciiBarRenderer(TreeRenderer):
                     if i < len(subtree):
                         line += subtree[i]
                     elif subtree:
-                        line += ' ' * len(subtree[0])
-                lines.append(line.ljust(width))
+                        line += ' ' * self._str_len(subtree[0])
+                lines.append(line + ' ' * (width - self._str_len(line)))
 
         return lines
 
+    def _str_len(self, b: str) -> int:
+        return len(b)
 
-class AsciiSingleLineBarRenderer(AsciiBarRenderer):
+
+class AsciiSingleLineBarRenderer(AsciiDoubleLineBarRenderer):
     """
     Render a SizeTree with one-line ASCII bars.
+
     Example:
 
         [........... foo/: 61.44KB ............]
@@ -327,9 +330,109 @@ class AsciiSingleLineBarRenderer(AsciiBarRenderer):
         return [
             self.bar(
                 label="{n}: {s}".format(n=node.name, s=self._size_formatter.format(node.size)),
-                width=width, fill='.', left='[', right=']', one='|', label_padding=' '
+                width=width, fill='.', left='[', right=']', small='|', label_padding=' '
             )
         ]
+
+
+class Colorizer:
+    # Markers to start and end a color
+    _START = '\x01'
+    _END = '\x02'
+
+    # Red, Green, Yellow
+    COLOR_CYCLE_RGY = ['\x1b[41m', '\x1b[42m', '\x1b[43m']
+
+    # Blue, Magenta, Cyan
+    COLOR_CYCLE_BMC = ['\x1b[44m', '\x1b[45m', '\x1b[46m']
+
+    COLOR_RESET = '\x1b[0m'
+
+    def wrap(self, s: str) -> str:
+        """Wrap given string in colorize markers"""
+        return self._START + s + self._END
+
+    def str_len(self, b: str) -> int:
+        return len(b.replace(self._START, '').replace(self._END, ''))
+
+    def get_colorize(self, colors: List[str]):
+        """Construct function that replaces markers with color codes (cycling through given color codes)"""
+        color_cycle = itertools.cycle(colors)
+
+        def colorize(line: str) -> str:
+            line = re.sub(self._START, lambda m: next(color_cycle), line)
+            line = re.sub(self._END, self.COLOR_RESET, line)
+            return line
+
+        return colorize
+
+    def get_colorize_rgy(self):
+        return self.get_colorize(self.COLOR_CYCLE_RGY)
+
+    def get_colorize_bmc(self):
+        return self.get_colorize(self.COLOR_CYCLE_BMC)
+
+
+class ColorDoubleLineBarRenderer(AsciiDoubleLineBarRenderer):
+    """
+    Render a SizeTree with two line ANSI color bars,
+    """
+
+    _top_line_fill = None
+    _colorizer = Colorizer()
+
+    def render_node(self, node: SizeTree, width: int) -> List[str]:
+        return [
+            self._colorizer.wrap(self.bar(
+                label=node.name,
+                width=width, fill=' ', left='', right='', small=' ',
+            )),
+            self._colorizer.wrap(self.bar(
+                label=self._size_formatter.format(node.size),
+                width=width, fill=' ', left='', right='', small=' ',
+            )),
+        ]
+
+    def render(self, tree: SizeTree, width: int) -> List[str]:
+        lines = super().render(tree=tree, width=width)
+        colorize_cycle = itertools.cycle([
+            self._colorizer.get_colorize_rgy(),
+            self._colorizer.get_colorize_rgy(),
+            self._colorizer.get_colorize_bmc(),
+            self._colorizer.get_colorize_bmc(),
+        ])
+        return [colorize(line) for (line, colorize) in zip(lines, colorize_cycle)]
+
+    def _str_len(self, b: str) -> int:
+        return self._colorizer.str_len(b)
+
+
+class ColorSingleLineBarRenderer(AsciiSingleLineBarRenderer):
+    """
+    Render a SizeTree with one line ANSI color bars,
+    """
+
+    _top_line_fill = None
+    _colorizer = Colorizer()
+
+    def render_node(self, node: SizeTree, width: int) -> List[str]:
+        return [
+            self._colorizer.wrap(self.bar(
+                label="{n}: {s}".format(n=node.name, s=self._size_formatter.format(node.size)),
+                width=width, fill=' ', left='', right='', small=' ',
+            ))
+        ]
+
+    def render(self, tree: SizeTree, width: int) -> List[str]:
+        lines = super().render(tree=tree, width=width)
+        colorize_cycle = itertools.cycle([
+            self._colorizer.get_colorize_rgy(),
+            self._colorizer.get_colorize_bmc(),
+        ])
+        return [colorize(line) for (line, colorize) in zip(lines, colorize_cycle)]
+
+    def _str_len(self, b: str) -> int:
+        return self._colorizer.str_len(b)
 
 
 def get_progress_callback(stream=sys.stdout, interval=.2, terminal_width=80):
@@ -388,9 +491,14 @@ def main():
         help='disable progress reporting'
     )
     cliparser.add_option(
-        '--one-line',
+        '-1', '--one-line',
         action='store_true', dest='one_line', default=False,
         help='Show one line bars instead of two line bars'
+    )
+    cliparser.add_option(
+        '-c', '--color',
+        action='store_true', dest='color', default=False,
+        help='Use colors to render bars (instead of ASCII art)'
     )
 
     (opts, args) = cliparser.parse_args()
@@ -422,9 +530,15 @@ def main():
             size_formatter = SIZE_FORMATTER_BYTES
 
         if opts.one_line:
-            renderer = AsciiSingleLineBarRenderer(max_depth=opts.max_depth, size_formatter=size_formatter)
+            if opts.color:
+                renderer = ColorSingleLineBarRenderer(max_depth=opts.max_depth, size_formatter=size_formatter)
+            else:
+                renderer = AsciiSingleLineBarRenderer(max_depth=opts.max_depth, size_formatter=size_formatter)
         else:
-            renderer = AsciiBarRenderer(max_depth=opts.max_depth, size_formatter=size_formatter)
+            if opts.color:
+                renderer = ColorDoubleLineBarRenderer(max_depth=opts.max_depth, size_formatter=size_formatter)
+            else:
+                renderer = AsciiDoubleLineBarRenderer(max_depth=opts.max_depth, size_formatter=size_formatter)
 
         print("\n".join(renderer.render(tree, width=opts.display_width)))
 
