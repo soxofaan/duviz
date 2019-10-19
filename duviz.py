@@ -341,10 +341,10 @@ class Colorizer:
     _END = '\x02'
 
     # Red, Green, Yellow
-    COLOR_CYCLE_RGY = ['\x1b[41m', '\x1b[42m', '\x1b[43m']
+    COLOR_CYCLE_RGY = ['\x1b[41;97m', '\x1b[42;30m', '\x1b[43;30m']
 
     # Blue, Magenta, Cyan
-    COLOR_CYCLE_BMC = ['\x1b[44m', '\x1b[45m', '\x1b[46m']
+    COLOR_CYCLE_BMC = ['\x1b[44;97m', '\x1b[45;30m', '\x1b[46;30m']
 
     COLOR_RESET = '\x1b[0m'
 

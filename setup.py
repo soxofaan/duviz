@@ -16,6 +16,8 @@ setup(
     url='https://github.com/soxofaan/duviz',
     author='Stefaan Lippens',
     python_requires='>=3.5',
+    install_requires=[],
+    tests_require=["pytest"],
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
