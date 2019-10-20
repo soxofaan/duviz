@@ -289,7 +289,7 @@ class AsciiBarRenderer(TreeRenderer):
         # Render children.
         # TODO option to sort alphabetically
         children = sorted(tree.children.values(), reverse=True)
-        if len(children) > 0:
+        if children:
             # Render each child (and subsequent sub-children).
             subtrees = []
             cumulative_size = 0
@@ -306,7 +306,7 @@ class AsciiBarRenderer(TreeRenderer):
                 for subtree in subtrees:
                     if i < len(subtree):
                         line += subtree[i]
-                    elif len(subtree) > 0:
+                    elif subtree:
                         line += ' ' * len(subtree[0])
                 lines.append(line.ljust(width))
 
@@ -396,7 +396,7 @@ def main():
     (opts, args) = cliparser.parse_args()
 
     # Make sure we have a valid list of paths
-    if len(args) > 0:
+    if args:
         paths = []
         for path in args:
             if os.path.exists(path):
