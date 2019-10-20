@@ -173,13 +173,13 @@ class BuildInodeCountTreeBsdLsTest(unittest.TestCase):
     For BSD version of ls
     """
 
-    def assertInputOuput(self, directory, ls_pipe, expected, width=40):
+    def assertInputOutput(self, directory, ls_pipe, expected, width=40):
         tree = duviz._build_inode_count_tree(directory, ls_pipe, progress=None)
         result = tree.block_display(width=width, size_renderer=duviz.human_readable_count)
         self.assertEqual(expected.split('\n'), result.split('\n'))
 
     def test_build_inode_count_tree_simple(self):
-        self.assertInputOuput(
+        self.assertInputOutput(
             directory='path/to',
             ls_pipe=_pipe('''\
                 222 .
@@ -194,7 +194,7 @@ class BuildInodeCountTreeBsdLsTest(unittest.TestCase):
         )
 
     def test_build_inode_count_tree_with_hardlink(self):
-        self.assertInputOuput(
+        self.assertInputOutput(
             directory='path/to',
             ls_pipe=_pipe('''\
                 222 .
@@ -210,7 +210,7 @@ class BuildInodeCountTreeBsdLsTest(unittest.TestCase):
         )
 
     def test_build_inode_count_tree_subdir(self):
-        self.assertInputOuput(
+        self.assertInputOutput(
             directory='path/to',
             ls_pipe=_pipe('''\
                 222 .
@@ -234,7 +234,7 @@ class BuildInodeCountTreeBsdLsTest(unittest.TestCase):
         )
 
     def test_build_inode_count_tree_various(self):
-        self.assertInputOuput(
+        self.assertInputOutput(
             directory='path/to',
             ls_pipe=_pipe('''\
                 2395 .
@@ -271,10 +271,10 @@ class BuildInodeCountTreeGnuLsTest(BuildInodeCountTreeBsdLsTest):
     For GNU version of ls
     """
 
-    def assertInputOuput(self, directory, ls_pipe, expected, width=40):
+    def assertInputOutput(self, directory, ls_pipe, expected, width=40):
         # GNU ls adds an additional line
         ls_pipe = BytesIO(directory.encode('ascii') + b':\n' + ls_pipe.getvalue())
-        BuildInodeCountTreeBsdLsTest.assertInputOuput(self, directory, ls_pipe, expected, width)
+        BuildInodeCountTreeBsdLsTest.assertInputOutput(self, directory, ls_pipe, expected, width)
 
 
 class ProgressTest(unittest.TestCase):

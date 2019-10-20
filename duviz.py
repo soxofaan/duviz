@@ -11,6 +11,7 @@ Website: http://soxofaan.github.io/duviz/
 
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -20,34 +21,6 @@ import unicodedata
 # TODO: catch absence/failure of du/ls subprocesses
 # TODO: how to handle unreadable subdirs in du/ls?
 # TODO: option to sort alphabetically (instead of on size)
-
-
-def terminal_size():
-    """
-    Best effort guess of terminal size.
-
-    @return (height, width)
-    """
-    try:
-        # Try to get size from ioctl system call (Unix only).
-        import struct, fcntl, termios
-        # Dummy string, determining answer buffer size
-        # (for struct of two unsigend short ints) for ioctl call.
-        dummy_string = struct.pack('HH', 0, 0)
-        # File descriptor of standard output.
-        file_descriptor = sys.stdout.fileno()
-        # The ioctl call to get terminal size.
-        answer = fcntl.ioctl(file_descriptor, termios.TIOCGWINSZ, dummy_string)
-        # Unpack answer to height and width values.
-        height, width = struct.unpack('HH', answer)
-    except (ImportError, OSError):
-        try:
-            # Try to get size from environment variables.
-            height, width = int(os.environ['LINES']), int(os.environ['COLUMNS'])
-        except KeyError:
-            # No info found: just use some sensible defaults.
-            height, width = (25, 80)
-    return height, width
 
 
 def bar(width, label, fill='-', left='[', right=']', one='|'):
@@ -342,7 +315,7 @@ def get_progress_callback(stream=sys.stdout, interval=.2, terminal_width=80):
 
 
 def main():
-    terminal_width = terminal_size()[1]
+    terminal_width = shutil.get_terminal_size().columns
 
     # Handle commandline interface.
     import optparse
