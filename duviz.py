@@ -323,7 +323,7 @@ def main():
         """usage: %prog [options] [DIRS]
         %prog gives a graphic representation of the disk space
         usage of the folder trees under DIRS.""",
-        version='%prog 2.0.0')
+        version='%prog 2.0.1')
     cliparser.add_option(
         '-w', '--width',
         action='store', type='int', dest='display_width', default=terminal_width,
