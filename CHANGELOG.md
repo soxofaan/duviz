@@ -4,6 +4,9 @@
 
 ## [Unreleased]
 
+- Add option `--color` to render with old fashioned ANSI colors
+    instead of old fashioned ASCII art
+- Start using pytest for unit tests
 
 ## [3.0.0] - 2019-10-20
 
