@@ -4,6 +4,9 @@
 
 ## [Unreleased]
 
+
+## [3.0.0] - 2019-10-20
+
 - Refactor size tree code for better encapsulation
 - Refactor render code to allow different render styles
 - Start using type hinting
