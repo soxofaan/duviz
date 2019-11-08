@@ -1,6 +1,5 @@
 # coding: utf-8
-
-
+import itertools
 import textwrap
 import time
 from io import StringIO
@@ -9,7 +8,7 @@ from typing import List
 import pytest
 
 from duviz import TreeRenderer, SIZE_FORMATTER_COUNT, SIZE_FORMATTER_BYTES, SIZE_FORMATTER_BYTES_BINARY, path_split, \
-    SizeTree, AsciiDoubleLineBarRenderer, DuTree, InodeTree, get_progress_callback, AsciiSingleLineBarRenderer, \
+    SizeTree, AsciiDoubleLineBarRenderer, DuTree, InodeTree, get_progress_reporter, AsciiSingleLineBarRenderer, \
     ColorDoubleLineBarRenderer, ColorSingleLineBarRenderer, Colorizer
 
 
@@ -630,11 +629,20 @@ def test_inode_tree_gnu_ls_various():
     )
 
 
-def test_get_progress_callback():
-    stream = StringIO()
-    progress = get_progress_callback(stream=stream, interval=0.1, terminal_width=10)
-    for i in range(4):
-        progress('path %d' % i)
-        time.sleep(0.05)
+def test_get_progress_reporter():
+    output = []
 
-    assert stream.getvalue() == 'path 0    \rpath 2    \r'
+    # Artificial time function: 1 second per call
+    time = itertools.count(10).__next__
+    progress = get_progress_reporter(write=lambda s: output.append(s), time=time, max_interval=10, terminal_width=10)
+    for i in range(200):
+        progress('path-{i}'.format(i=i))
+
+    assert all(len(l.rstrip('\r')) <= 10 for l in output)
+    # Extract "printed" path indexes
+    indexes = [int(l.partition('-')[-1]) for l in output]
+    assert indexes[0] == 0
+    # Check time deltas: initial ones should be small, final ones large
+    deltas = [i1-i0 for (i0, i1) in zip(indexes[:-1], indexes[1:])]
+    assert all(d < 5 for d in deltas[:5])
+    assert all(d > 9 for d in deltas[-5:])

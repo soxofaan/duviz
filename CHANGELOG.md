@@ -7,6 +7,8 @@
 - Add option `--color` to render with old fashioned ANSI colors
     instead of old fashioned ASCII art
 - Start using pytest for unit tests
+- Bring back progress reporting after 3.0.0 refactor
+
 
 ## [3.0.0] - 2019-10-20
 

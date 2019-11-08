@@ -99,7 +99,7 @@ class DuTree(SizeTree):
     _du_regex = re.compile(r'([0-9]*)\s*(.*)')
 
     @classmethod
-    def from_du(cls, root, progress=None, one_filesystem=False, dereference=False):
+    def from_du(cls, root, one_filesystem=False, dereference=False, progress_report=None):
         # Measure size in 1024 byte blocks. The GNU-du option -b enables counting
         # in bytes directly, but it is not available in BSD-du.
         command = ['du', '-k']
@@ -114,18 +114,20 @@ class DuTree(SizeTree):
         except OSError:
             raise SubprocessException('Failed to launch "du" utility subprocess. Is it installed and in your PATH?')
 
-        # TODO progress reporting
         with contextlib.closing(process.stdout):
             return cls.from_du_listing(
                 root=root,
                 du_listing=(l.decode('utf-8') for l in process.stdout),
+                progress_report=progress_report
             )
 
     @classmethod
-    def from_du_listing(cls, root, du_listing):
+    def from_du_listing(cls, root, du_listing, progress_report=None):
         def pairs(lines):
             for line in lines:
                 kb, path = cls._du_regex.match(line).group(1, 2)
+                if progress_report:
+                    progress_report(path)
                 yield path_split(path, root)[1:], 1024 * int(kb)
 
         return cls.from_path_size_pairs(root=root, pairs=pairs(du_listing))
@@ -134,22 +136,22 @@ class DuTree(SizeTree):
 class InodeTree(SizeTree):
 
     @classmethod
-    def from_ls(cls, root, progress=None):
+    def from_ls(cls, root, progress_report=None):
         command = ['ls', '-aiR', root]
         try:
             process = subprocess.Popen(command, stdout=subprocess.PIPE)
         except OSError:
             raise SubprocessException('Failed to launch "ls" subprocess.')
 
-        # TODO progress reporting
         with contextlib.closing(process.stdout):
             return cls.from_ls_listing(
                 root=root,
                 ls_listing=process.stdout.read().decode('utf-8'),
+                progress_report=progress_report
             )
 
     @classmethod
-    def from_ls_listing(cls, root, ls_listing):
+    def from_ls_listing(cls, root, ls_listing, progress_report=None):
 
         def pairs(listing):
             all_inodes = set()
@@ -179,6 +181,8 @@ class InodeTree(SizeTree):
                         count += 1
                     all_inodes.add(inode)
 
+                if progress_report:
+                    progress_report(path)
                 yield path_split(path, root)[1:], count
 
         tree = cls.from_path_size_pairs(pairs=pairs(ls_listing), root=root)
@@ -435,16 +439,21 @@ class ColorSingleLineBarRenderer(AsciiSingleLineBarRenderer):
         return self._colorizer.str_len(b)
 
 
-def get_progress_callback(stream=sys.stdout, interval=.2, terminal_width=80):
-    class State:
-        """Python 2 compatible hack to have 'nonlocal' scoped state."""
-        threshold = 0
+def get_progress_reporter(max_interval=1, terminal_width=80, write=sys.stdout.write, time=time.time):
+    """
+    Create a progress reporting function that only actually prints in intervals
+    """
+    next_time = 0
+    # Start printing frequently.
+    interval = 0
 
-    def progress(s):
-        now = time.time()
-        if now > State.threshold:
-            stream.write(s.ljust(terminal_width)[:terminal_width] + '\r')
-            State.threshold = now + interval
+    def progress(info: str):
+        nonlocal next_time, interval
+        if time() > next_time:
+            write(info.ljust(terminal_width)[:terminal_width] + '\r')
+            next_time = time() + interval
+            # Converge to max interval.
+            interval = 0.9 * interval + 0.1 * max_interval
 
     return progress
 
@@ -516,17 +525,20 @@ def main():
         paths = ['.']
 
     if opts.show_progress:
-        feedback = get_progress_callback(stream=sys.stdout, terminal_width=opts.display_width)
+        progress_report = get_progress_reporter(terminal_width=opts.display_width)
     else:
-        feedback = None
+        progress_report = None
 
     for directory in paths:
         if opts.inode_count:
-            tree = InodeTree.from_ls(root=directory, progress=feedback)
+            tree = InodeTree.from_ls(root=directory, progress_report=progress_report)
             size_formatter = SIZE_FORMATTER_COUNT
         else:
-            tree = DuTree.from_du(root=directory, progress=feedback, one_filesystem=opts.onefilesystem,
-                                  dereference=opts.dereference)
+            tree = DuTree.from_du(
+                root=directory,
+                one_filesystem=opts.onefilesystem, dereference=opts.dereference,
+                progress_report=progress_report,
+            )
             size_formatter = SIZE_FORMATTER_BYTES
 
         if opts.one_line:
