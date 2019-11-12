@@ -1,8 +1,6 @@
 # coding: utf-8
 import itertools
 import textwrap
-import time
-from io import StringIO
 from typing import List
 
 import pytest
