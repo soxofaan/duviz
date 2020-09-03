@@ -41,6 +41,7 @@ Features
 - Progress reporting while you wait. Be hypnotized!
 - Detects your terminal width for maximum visualization pleasure.
 - Apart from file size (the default), you can also just count files (inodes)
+- Option to use terminal colors for the boxes instead of ASCII art
 
 
 Installation
