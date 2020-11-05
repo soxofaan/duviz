@@ -59,6 +59,15 @@ class SizeTree:
     """
 
     def __init__(self, name, size=0, children=None):
+        """
+        Initialize this node.
+
+        Args:
+            self: (todo): write your description
+            name: (str): write your description
+            size: (int): write your description
+            children: (todo): write your description
+        """
         self.name = name
         self.size = size
         self.children = children or {}
@@ -80,6 +89,13 @@ class SizeTree:
         return tree
 
     def __lt__(self, other):
+        """
+        Determine if this is less than other.
+
+        Args:
+            self: (todo): write your description
+            other: (todo): write your description
+        """
         # We only implement rich comparison method __lt__ so make sorting work.
         return (self.size, self.name) < (other.size, other.name)
 
@@ -100,6 +116,16 @@ class DuTree(SizeTree):
 
     @classmethod
     def from_du(cls, root, one_filesystem=False, dereference=False, progress_report=None):
+        """
+        Create a copy of the given root object.
+
+        Args:
+            cls: (todo): write your description
+            root: (todo): write your description
+            one_filesystem: (str): write your description
+            dereference: (todo): write your description
+            progress_report: (todo): write your description
+        """
         # Measure size in 1024 byte blocks. The GNU-du option -b enables counting
         # in bytes directly, but it is not available in BSD-du.
         command = ['du', '-k']
@@ -123,7 +149,22 @@ class DuTree(SizeTree):
 
     @classmethod
     def from_du_listing(cls, root, du_listing, progress_report=None):
+        """
+        Create a list of lines from - lines.
+
+        Args:
+            cls: (todo): write your description
+            root: (todo): write your description
+            du_listing: (list): write your description
+            progress_report: (todo): write your description
+        """
         def pairs(lines):
+            """
+            Parse lines of lines.
+
+            Args:
+                lines: (list): write your description
+            """
             for line in lines:
                 kb, path = cls._du_regex.match(line).group(1, 2)
                 if progress_report:
@@ -137,6 +178,14 @@ class InodeTree(SizeTree):
 
     @classmethod
     def from_ls(cls, root, progress_report=None):
+        """
+        Create a new subprocess object } instance from the given root.
+
+        Args:
+            cls: (todo): write your description
+            root: (todo): write your description
+            progress_report: (todo): write your description
+        """
         command = ['ls', '-aiR', root]
         try:
             process = subprocess.Popen(command, stdout=subprocess.PIPE)
@@ -152,8 +201,23 @@ class InodeTree(SizeTree):
 
     @classmethod
     def from_ls_listing(cls, root, ls_listing, progress_report=None):
+        """
+        Generate a list of ls ls ls ls.
+
+        Args:
+            cls: (todo): write your description
+            root: (todo): write your description
+            ls_listing: (list): write your description
+            progress_report: (todo): write your description
+        """
 
         def pairs(listing):
+            """
+            Yields a list of pairs.
+
+            Args:
+                listing: (str): write your description
+            """
             all_inodes = set()
 
             # Process data per directory block (separated by two newlines)
@@ -194,10 +258,25 @@ class SizeFormatter:
     """Render a (byte) count in compact human readable way: 12, 34k, 56M, ..."""
 
     def __init__(self, base: int, formats: List[str]):
+        """
+        Initialize a list.
+
+        Args:
+            self: (todo): write your description
+            base: (float): write your description
+            formats: (str): write your description
+        """
         self.base = base
         self.formats = formats
 
     def format(self, size: int) -> str:
+        """
+        Return a human - readable representation.
+
+        Args:
+            self: (todo): write your description
+            size: (int): write your description
+        """
         for f in self.formats[:-1]:
             if round(size, 2) < self.base:
                 return f % size
@@ -214,10 +293,27 @@ class TreeRenderer:
     """Base class for SizeTree renderers"""
 
     def __init__(self, max_depth: int = 5, size_formatter: SizeFormatter = SIZE_FORMATTER_COUNT):
+        """
+        Initialize the formatter.
+
+        Args:
+            self: (todo): write your description
+            max_depth: (int): write your description
+            size_formatter: (int): write your description
+            SIZE_FORMATTER_COUNT: (int): write your description
+        """
         self.max_depth = max_depth
         self._size_formatter = size_formatter
 
     def render(self, tree: SizeTree, width: int) -> List[str]:
+        """
+        Renders the tree.
+
+        Args:
+            self: (todo): write your description
+            tree: (todo): write your description
+            width: (todo): write your description
+        """
         raise NotImplementedError
 
     def bar(self, label: str, width: int, fill='-', left='[', right=']', small='|', label_padding='') -> str:
@@ -263,6 +359,14 @@ class AsciiDoubleLineBarRenderer(TreeRenderer):
     _top_line_fill = '_'
 
     def render(self, tree: SizeTree, width: int) -> List[str]:
+        """
+        Renders the tree.
+
+        Args:
+            self: (todo): write your description
+            tree: (todo): write your description
+            width: (todo): write your description
+        """
         lines = []
         if self._top_line_fill:
             lines.append(self._top_line_fill * width)
@@ -282,6 +386,15 @@ class AsciiDoubleLineBarRenderer(TreeRenderer):
         ]
 
     def _render(self, tree: SizeTree, width: int, depth: int) -> List[str]:
+        """
+        Renders the tree as a string.
+
+        Args:
+            self: (todo): write your description
+            tree: (todo): write your description
+            width: (todo): write your description
+            depth: (int): write your description
+        """
         lines = []
         if width < 1 or depth < 0:
             return lines
@@ -316,6 +429,13 @@ class AsciiDoubleLineBarRenderer(TreeRenderer):
         return lines
 
     def _str_len(self, b: str) -> int:
+        """
+        Returns the length of a string.
+
+        Args:
+            self: (todo): write your description
+            b: (array): write your description
+        """
         return len(b)
 
 
@@ -331,6 +451,14 @@ class AsciiSingleLineBarRenderer(AsciiDoubleLineBarRenderer):
     _top_line_fill = None
 
     def render_node(self, node: SizeTree, width: int) -> List[str]:
+        """
+        Render a node.
+
+        Args:
+            self: (todo): write your description
+            node: (todo): write your description
+            width: (todo): write your description
+        """
         return [
             self.bar(
                 label="{n}: {s}".format(n=node.name, s=self._size_formatter.format(node.size)),
@@ -357,6 +485,13 @@ class Colorizer:
         return self._START + s + self._END
 
     def str_len(self, b: str) -> int:
+        """
+        Return the length of the string.
+
+        Args:
+            self: (todo): write your description
+            b: (str): write your description
+        """
         return len(b.replace(self._START, '').replace(self._END, ''))
 
     def get_colorize(self, colors: List[str]):
@@ -364,6 +499,12 @@ class Colorizer:
         color_cycle = itertools.cycle(colors)
 
         def colorize(line: str) -> str:
+            """
+            Colorize the string.
+
+            Args:
+                line: (str): write your description
+            """
             line = re.sub(self._START, lambda m: next(color_cycle), line)
             line = re.sub(self._END, self.COLOR_RESET, line)
             return line
@@ -371,9 +512,21 @@ class Colorizer:
         return colorize
 
     def get_colorize_rgy(self):
+        """
+        Get the rgb : rgy colorize.
+
+        Args:
+            self: (todo): write your description
+        """
         return self.get_colorize(self.COLOR_CYCLE_RGY)
 
     def get_colorize_bmc(self):
+        """
+        Returns the colorize colorize.
+
+        Args:
+            self: (todo): write your description
+        """
         return self.get_colorize(self.COLOR_CYCLE_BMC)
 
 
@@ -386,6 +539,14 @@ class ColorDoubleLineBarRenderer(AsciiDoubleLineBarRenderer):
     _colorizer = Colorizer()
 
     def render_node(self, node: SizeTree, width: int) -> List[str]:
+        """
+        Render a node.
+
+        Args:
+            self: (todo): write your description
+            node: (todo): write your description
+            width: (todo): write your description
+        """
         return [
             self._colorizer.wrap(self.bar(
                 label=node.name,
@@ -398,6 +559,14 @@ class ColorDoubleLineBarRenderer(AsciiDoubleLineBarRenderer):
         ]
 
     def render(self, tree: SizeTree, width: int) -> List[str]:
+        """
+        Renders the scene.
+
+        Args:
+            self: (todo): write your description
+            tree: (todo): write your description
+            width: (todo): write your description
+        """
         lines = super().render(tree=tree, width=width)
         colorize_cycle = itertools.cycle([
             self._colorizer.get_colorize_rgy(),
@@ -408,6 +577,13 @@ class ColorDoubleLineBarRenderer(AsciiDoubleLineBarRenderer):
         return [colorize(line) for (line, colorize) in zip(lines, colorize_cycle)]
 
     def _str_len(self, b: str) -> int:
+        """
+        Return the length of the string.
+
+        Args:
+            self: (todo): write your description
+            b: (array): write your description
+        """
         return self._colorizer.str_len(b)
 
 
@@ -420,6 +596,14 @@ class ColorSingleLineBarRenderer(AsciiSingleLineBarRenderer):
     _colorizer = Colorizer()
 
     def render_node(self, node: SizeTree, width: int) -> List[str]:
+        """
+        Render a node.
+
+        Args:
+            self: (todo): write your description
+            node: (todo): write your description
+            width: (todo): write your description
+        """
         return [
             self._colorizer.wrap(self.bar(
                 label="{n}: {s}".format(n=node.name, s=self._size_formatter.format(node.size)),
@@ -428,6 +612,14 @@ class ColorSingleLineBarRenderer(AsciiSingleLineBarRenderer):
         ]
 
     def render(self, tree: SizeTree, width: int) -> List[str]:
+        """
+        Renders the tree.
+
+        Args:
+            self: (todo): write your description
+            tree: (todo): write your description
+            width: (todo): write your description
+        """
         lines = super().render(tree=tree, width=width)
         colorize_cycle = itertools.cycle([
             self._colorizer.get_colorize_rgy(),
@@ -436,6 +628,13 @@ class ColorSingleLineBarRenderer(AsciiSingleLineBarRenderer):
         return [colorize(line) for (line, colorize) in zip(lines, colorize_cycle)]
 
     def _str_len(self, b: str) -> int:
+        """
+        Return the length of the string.
+
+        Args:
+            self: (todo): write your description
+            b: (array): write your description
+        """
         return self._colorizer.str_len(b)
 
 
@@ -448,6 +647,12 @@ def get_progress_reporter(max_interval=1, terminal_width=80, write=sys.stdout.wr
     interval = 0
 
     def progress(info: str):
+        """
+        Prints a progress bar.
+
+        Args:
+            info: (todo): write your description
+        """
         nonlocal next_time, interval
         if time() > next_time:
             write(info.ljust(terminal_width)[:terminal_width] + '\r')
@@ -459,6 +664,11 @@ def get_progress_reporter(max_interval=1, terminal_width=80, write=sys.stdout.wr
 
 
 def main():
+    """
+    Main function.
+
+    Args:
+    """
     terminal_width = shutil.get_terminal_size().columns
 
     # Handle commandline interface.

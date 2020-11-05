@@ -11,30 +11,65 @@ from duviz import TreeRenderer, SIZE_FORMATTER_COUNT, SIZE_FORMATTER_BYTES, SIZE
 
 
 def test_bar_one():
+    """
+    Bar bar bar bar.
+
+    Args:
+    """
     assert 'y' == TreeRenderer().bar('x', 1, small='y')
 
 
 def test_bar_zero():
+    """
+    Draw bar bar bar.
+
+    Args:
+    """
     assert '' == TreeRenderer().bar('x', 0)
 
 
 def test_bar_basic():
+    """
+    Basic bar bar.
+
+    Args:
+    """
     assert '[--abcd--]' == TreeRenderer().bar('abcd', 10)
 
 
 def test_bar_left_and_right():
+    """
+    Draw bar bar bar.
+
+    Args:
+    """
     assert '<<--abcd--**' == TreeRenderer().bar('abcd', 12, left='<<', right='**')
 
 
 def test_bar_fill():
+    """
+    Draw bar bar bar.
+
+    Args:
+    """
     assert '[++abcd++]' == TreeRenderer().bar('abcd', 10, fill='+')
 
 
 def test_bar_unicode():
+    """
+    Test for bar bar.
+
+    Args:
+    """
     assert '[++åßc∂++]' == TreeRenderer().bar('åßc∂', 10, fill='+')
 
 
 def test_bar_unicode2():
+    """
+    Test for bar bar bar.
+
+    Args:
+    """
     label = b'\xc3\xb8o\xcc\x82o\xcc\x88o\xcc\x81a\xcc\x8a'.decode('utf8')
     assert '[+øôöóå+]' == TreeRenderer().bar(label, 9, fill='+')
 
@@ -59,6 +94,12 @@ def test_bar_unicode2():
     ]
 )
 def test_bar_padding(expected):
+    """
+    Draw bar bar bar.
+
+    Args:
+        expected: (str): write your description
+    """
     assert expected == TreeRenderer().bar('foo', width=len(expected), fill="-", label_padding='_')
 
 
@@ -76,6 +117,12 @@ def test_bar_padding(expected):
     ]
 )
 def test_bar_no_left_right(expected):
+    """
+    Draw bar bar bar bar.
+
+    Args:
+        expected: (str): write your description
+    """
     assert expected == TreeRenderer().bar(
         'foo', width=len(expected),
         left='', right='', small='*', fill="-", label_padding='_',
@@ -100,6 +147,12 @@ def test_bar_no_left_right(expected):
     ]
 )
 def test_bar_small(expected):
+    """
+    Draw bar bar bar.
+
+    Args:
+        expected: (todo): write your description
+    """
     assert expected == TreeRenderer().bar(
         'foo', width=len(expected),
         left='[[', right=']]', small='=', fill="-", label_padding='_',
@@ -120,6 +173,12 @@ def test_bar_small(expected):
     ]
 )
 def test_bar_small_multiple(expected):
+    """
+    Draw bar bar bar.
+
+    Args:
+        expected: (str): write your description
+    """
     assert expected == TreeRenderer().bar(
         'f', width=len(expected),
         left='[<[', right=']>]', small='#=+', fill="-", label_padding='_',
@@ -208,6 +267,14 @@ TREE80 = SizeTree("foo", 80, children={
     ]
 )
 def test_ascii_double_line_bar_renderer(tree, width, expected):
+    """
+    Render a split width bar chart.
+
+    Args:
+        tree: (todo): write your description
+        width: (int): write your description
+        expected: (list): write your description
+    """
     assert AsciiDoubleLineBarRenderer().render(tree, width=width) == expected
 
 
@@ -238,10 +305,23 @@ def test_ascii_double_line_bar_renderer(tree, width, expected):
     ]
 )
 def test_ascii_single_line_bar_renderer(tree, width, expected):
+    """
+    Render a single line ascii ascii line.
+
+    Args:
+        tree: (todo): write your description
+        width: (int): write your description
+        expected: (list): write your description
+    """
     assert AsciiSingleLineBarRenderer().render(tree, width=width) == expected
 
 
 def test_colorize_rgy():
+    """
+    Colorize the rgy.
+
+    Args:
+    """
     clz = Colorizer()
     marked = "_".join(clz.wrap(t) for t in ["AAA", "BBB", "CCC", "DDD", "EEE"])
     colorize = clz.get_colorize_rgy()
@@ -251,6 +331,11 @@ def test_colorize_rgy():
 
 
 def test_colorize_bmc():
+    """
+    Colorize the hsv.
+
+    Args:
+    """
     clz = Colorizer()
     marked = "_".join(clz.wrap(t) for t in ["AAA", "BBB", "CCC", "DDD", "EEE"])
     colorize = clz.get_colorize_bmc()
@@ -285,6 +370,14 @@ def test_colorize_bmc():
     ]
 )
 def test_color_double_line_bar_renderer(tree, width, expected):
+    """
+    Draws a horizontal horizontal line bar.
+
+    Args:
+        tree: (todo): write your description
+        width: (int): write your description
+        expected: (list): write your description
+    """
     assert ColorDoubleLineBarRenderer().render(tree, width=width) == expected
 
 
@@ -303,6 +396,14 @@ def test_color_double_line_bar_renderer(tree, width, expected):
     ]
 )
 def test_color_single_line_bar_renderer(tree, width, expected):
+    """
+    Draw a horizontal horizontal color bar chart.
+
+    Args:
+        tree: (todo): write your description
+        width: (int): write your description
+        expected: (list): write your description
+    """
     assert ColorSingleLineBarRenderer().render(tree, width=width) == expected
 
 
@@ -323,6 +424,13 @@ def test_color_single_line_bar_renderer(tree, width, expected):
     ]
 )
 def test_formatter_count(x, expected):
+    """
+    Evaluate the test count.
+
+    Args:
+        x: (todo): write your description
+        expected: (bool): write your description
+    """
     assert expected == SIZE_FORMATTER_COUNT.format(x)
 
 
@@ -341,6 +449,13 @@ def test_formatter_count(x, expected):
     ]
 )
 def test_formatter_bytes(x, expected):
+    """
+    Test if the formatter is a string.
+
+    Args:
+        x: (todo): write your description
+        expected: (todo): write your description
+    """
     assert expected == SIZE_FORMATTER_BYTES.format(x)
 
 
@@ -361,6 +476,13 @@ def test_formatter_bytes(x, expected):
     ]
 )
 def test_formatter_bytes_binary(x, expected):
+    """
+    Evaluate binary formatter.
+
+    Args:
+        x: (todo): write your description
+        expected: (str): write your description
+    """
     assert expected == SIZE_FORMATTER_BYTES_BINARY.format(x)
 
 
@@ -375,6 +497,13 @@ def test_formatter_bytes_binary(x, expected):
     ]
 )
 def test_path_split(path, expected):
+    """
+    Test if the given a path * expected *.
+
+    Args:
+        path: (str): write your description
+        expected: (bool): write your description
+    """
     assert expected == path_split(path)
 
 
@@ -393,6 +522,14 @@ def test_path_split(path, expected):
     ]
 )
 def test_path_split_with_base(path, base, expected):
+    """
+    Split the given path : path.
+
+    Args:
+        path: (str): write your description
+        base: (str): write your description
+        expected: (bool): write your description
+    """
     assert expected == path_split(path, base)
 
 
@@ -402,6 +539,12 @@ def _dedent(s: str) -> str:
 
 
 def _dedent_and_split(s: str) -> List[str]:
+    """
+    Split a string into a list of strings.
+
+    Args:
+        s: (str): write your description
+    """
     return _dedent(s).strip("\n").split("\n")
 
 
@@ -415,6 +558,13 @@ def _dedent_and_split(s: str) -> List[str]:
     ("\n     foo\n   bar\n    ", "  foo\nbar\n"),
 ])
 def test_dedent(input, output):
+    """
+    Test if the input is a test.
+
+    Args:
+        input: (array): write your description
+        output: (todo): write your description
+    """
     assert _dedent(input) == output
 
 
@@ -428,10 +578,22 @@ def test_dedent(input, output):
     ("\n     foo\n   bar\n    ", ["  foo", "bar"]),
 ])
 def test_dedent_and_split(input, output):
+    """
+    Split the given input and output
+
+    Args:
+        input: (str): write your description
+        output: (str): write your description
+    """
     assert _dedent_and_split(input) == output
 
 
 def test_build_du_tree1():
+    """
+    Render the two directories.
+
+    Args:
+    """
     directory = 'path/to'
     du_listing = _dedent_and_split('''
         120     path/to/foo
@@ -458,6 +620,11 @@ def test_build_du_tree1():
 
 
 def test_build_du_tree2():
+    """
+    Render a list of directories in the working directories.
+
+    Args:
+    """
     directory = 'path/to'
     du_listing = _dedent_and_split('''
         1       path/to/A
@@ -486,6 +653,11 @@ def _check_ls_listing_render(ls_listing: str, expected: str, directory='path/to'
 
 
 def test_inode_tree_bsd_ls_simple():
+    """
+    Render a list of all - bcbio.
+
+    Args:
+    """
     _check_ls_listing_render(
         ls_listing="""
             222 .
@@ -502,6 +674,11 @@ def test_inode_tree_bsd_ls_simple():
 
 
 def test_inode_tree_bsd_ls_with_hardlink():
+    """
+    Render the test_inode.
+
+    Args:
+    """
     _check_ls_listing_render(
         ls_listing="""
             222 .
@@ -519,6 +696,11 @@ def test_inode_tree_bsd_ls_with_hardlink():
 
 
 def test_inode_tree_bsd_ls_subdir():
+    """
+    Render a list of subdirsode dir
+
+    Args:
+    """
     _check_ls_listing_render(
         ls_listing="""
             222 .
@@ -544,6 +726,11 @@ def test_inode_tree_bsd_ls_subdir():
 
 
 def test_inode_tree_bsd_ls_various():
+    """
+    Render a list of - www.
+
+    Args:
+    """
     _check_ls_listing_render(
         ls_listing="""
             2395 .
@@ -577,6 +764,11 @@ def test_inode_tree_bsd_ls_various():
 
 
 def test_inode_tree_gnu_ls_simple():
+    """
+    Test ifode list of the main test.
+
+    Args:
+    """
     _check_ls_listing_render(
         ls_listing="""
             path/to:
@@ -594,6 +786,11 @@ def test_inode_tree_gnu_ls_simple():
 
 
 def test_inode_tree_gnu_ls_various():
+    """
+    Inode an x - www - www.
+
+    Args:
+    """
     _check_ls_listing_render(
         ls_listing="""
             path/to:
@@ -628,6 +825,11 @@ def test_inode_tree_gnu_ls_various():
 
 
 def test_get_progress_reporter():
+    """
+    Get the progress of each progress of the progress bar.
+
+    Args:
+    """
     output = []
 
     # Artificial time function: 1 second per call
