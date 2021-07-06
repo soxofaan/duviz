@@ -4,7 +4,7 @@
 
 ## [Unreleased]
 
--
+- Replace Travis CI with Github Actions
 
 
 ## [3.1.0] - 2019-11-12

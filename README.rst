@@ -1,6 +1,5 @@
-.. image:: https://travis-ci.org/soxofaan/duviz.svg?branch=master
-    :target: https://travis-ci.org/soxofaan/duviz
-
+.. image:: https://github.com/soxofaan/duviz/actions/workflows/lint-and-test.yml/badge.svg?branch=master
+    :target: https://github.com/soxofaan/duviz/actions/workflows/lint-and-test.yml
 
 What is duviz?
 --------------
