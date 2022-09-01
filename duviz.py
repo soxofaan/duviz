@@ -31,6 +31,9 @@ from pathlib import Path
 # TODO: use pathlib.Path instead of naive strings where appropriate
 
 
+__version__ = "3.2.0"
+
+
 def path_split(path: str, base: str = "") -> List[str]:
     """
     Split a file system path in a list of path components (as a recursive os.path.split()),
