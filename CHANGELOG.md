@@ -4,6 +4,9 @@
 
 ## [Unreleased]
 
+
+## [3.1.1] - 2022-09-01
+
 - Replace Travis CI with Github Actions
 
 
