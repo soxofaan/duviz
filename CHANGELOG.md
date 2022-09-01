@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+- Migrate to `pyproject.toml` based package metadata and information.
+
 
 ## [3.2.0] - 2022-12-18
 

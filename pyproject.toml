@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "duviz"
+version = "3.1.2"
+authors = [
+    { name = "Stefaan Lippens", email = "soxofaan@gmail.com" },
+]
+description = "Command line disk space visualization tool"
+readme = "README.rst"
+license = { file = "LICENSE.txt" }
+requires-python = ">=3.5"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Topic :: System :: Systems Administration",
+]
+keywords = ["disk usage", "visualization", "asciiart"]
+
+[project.urls]
+"Homepage" = "https://github.com/soxofaan/duviz"
+"Bug Tracker" = "https://github.com/soxofaan/duviz/issues"
+
+[project.scripts]
+duviz = "duviz:main"
+
+[tool.hatch.build]
+include = [
+    "duviz.py",
+]
