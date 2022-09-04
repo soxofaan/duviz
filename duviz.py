@@ -277,6 +277,205 @@ class TreeRenderer:
         return b
 
 
+class ColumnsRenderer(TreeRenderer):
+    """
+    Render a SizeTree with vertical columns.
+    """
+
+    def __init__(
+        self,
+        height: int,
+        max_depth: int = 5,
+        size_formatter: SizeFormatter = SIZE_FORMATTER_COUNT,
+        color_mode: bool = False,
+    ):
+        super().__init__(max_depth, size_formatter)
+        self.height = height
+        self.color_mode = color_mode
+        if color_mode:
+            self.colorizers = []
+            c = Colorizer()
+            # We use reverse order so that the root is always the same color regardless of the depth
+            for i in reversed(range(max_depth + 1)):
+                cycle = itertools.cycle(
+                    c.COLOR_CYCLE_BMC if i % 2 == 0 else c.COLOR_CYCLE_RGY
+                )
+                self.colorizers.append(cycle)
+
+    def render(self, tree: SizeTree, width: int) -> List[str]:
+        lines = self._render(
+            tree, width // (self.max_depth + 1), self.height, self.max_depth
+        )
+        if lines and not self.color_mode:
+            # The monochrome rendering must be displayed in reverse mode
+            lines[0] = "\x1b[7m" + lines[0]
+            lines[-1] += "\x1b[27m"
+        return lines
+
+    def render_node(
+        self,
+        node: Optional[SizeTree],
+        width: int,
+        height: int,
+        depth: int,
+    ) -> List[str]:
+        """Render a single node"""
+        def _truncate(s, maxlen):
+            truncation_indicator = "..."
+            if len(s) <= maxlen:
+                return s
+            return s[: maxlen - len(truncation_indicator)] + truncation_indicator
+
+        if self.color_mode:
+            color = next(self.colorizers[depth])
+            prefix = color
+            suffix = Colorizer.COLOR_RESET
+            left = ""
+            border_lines = 0
+        else:
+            prefix = ""
+            suffix = ""
+            left = "█"
+            border_lines = 1
+        assert height >= border_lines
+        if node:
+            text_lines = min(2, height - border_lines)
+            size_str = self._size_formatter.format(node.size)
+            if text_lines == 0:
+                label_line_arr = []
+            elif text_lines == 1:
+                name_size_separator = " "
+                name_maxlen = (
+                    width - len(size_str) - len(left) - len(name_size_separator)
+                )
+                label_line_arr = [
+                    _truncate(node.name, name_maxlen) + name_size_separator + size_str
+                ]
+            elif text_lines == 2:
+                name_maxlen = width - len(left)
+                label_line_arr = [
+                    _truncate(node.name, name_maxlen),
+                    size_str,
+                ]
+            else:
+                assert False
+        else:
+            # When called without a specific node, it means that we need to
+            # render a block to collectively represent multiple directories that
+            # are not large enough in themselves to get their own block.
+            text_lines = min(1, height - border_lines)
+            if text_lines == 0:
+                label_line_arr = []
+            elif text_lines == 1:
+                label_line_arr = ["..."]
+            else:
+                assert False
+
+        padding_lines = height - border_lines - text_lines
+        if self.color_mode:
+            padding_lines_above = padding_lines // 2
+        else:
+            padding_lines_above = (padding_lines + 1) // 2
+        padding_lines_below = padding_lines - padding_lines_above
+
+        lines = []
+
+        def _bar(label="", fill=" "):
+            lines.append(
+                prefix
+                + self.bar(width=width, left=left, fill=fill, right="", label=label)
+                + suffix
+            )
+
+        for i in range(padding_lines_above):
+            _bar()
+        for line in label_line_arr:
+            _bar(line)
+        for i in range(padding_lines_below):
+            _bar()
+        if not self.color_mode:
+            _bar(fill="▁")
+
+        return lines
+
+    def _render(self, tree: SizeTree, width: int, height: int, depth: int) -> List[str]:
+        if height < 1:
+            return []
+
+        # Render current dir.
+        parent_block = self.render_node(tree, width=width, height=height, depth=depth)
+        if depth == 0:
+            return parent_block
+
+        # Render children.
+        children = sorted(tree.children.values(), reverse=True)
+        # Render each child as a subtree, which is a list of lines.
+        subtrees_block = []
+        cumulative_size = 0
+        last_row = curr_row = 0
+        last_block_height = sys.maxsize
+        size_of_all_children = sum([child.size for child in children])
+        height_of_all_children = int(
+            round(float(height * size_of_all_children) / tree.size, 0)
+        )
+        assert height_of_all_children <= height
+        for child in children:
+            cumulative_size += child.size
+            curr_row = int(round(float(height * cumulative_size) / tree.size, 0))
+            block_height = max(0, curr_row - last_row)
+            if not self.color_mode and block_height == 1:
+                block_height = 0
+            # Don't let the grid-alignment make any blocks more than twice as
+            # tall than without alignment.
+            block_height = min(
+                block_height, 2 * int(round(float(height * child.size) / tree.size, 0))
+            )
+            # Because of aligning the blocks to the text grid, sometimes a taller
+            # block would follow a shorter one, even though the nodes are in a
+            # decreasing order by size. This would look confusing, so we limit the
+            # height of some blocks to avoid that. This causes the build-up of a
+            # deficit of rows, which eventually gets resolved in one of two ways:
+            #
+            # - If a height-truncated block is followed by blocks that could be
+            # slightly shorter, they will get the same height until the
+            # difference is eliminated.
+            #
+            # - If there is still a deficit at the end, we make up for it by adding
+            # space-filler lines at the bottom.
+            block_height = min(block_height, last_block_height)
+            # Because of the descreasing order, the last block height is the
+            # shortest block height encountered so far. Don't allow taller
+            # blocks than that in the following iterations.
+            last_block_height = block_height
+            subtrees_block.extend(self._render(child, width, block_height, depth - 1))
+            last_row += block_height
+
+        # An extra block to represent small directories that didn't get their
+        # own block and to make up for the deficit caused by grid alignment.
+        if curr_row > last_row:
+            subtrees_block.extend(
+                self.render_node(
+                    None, width=width, height=curr_row - last_row, depth=depth - 1
+                )
+            )
+
+        # Assemble blocks.
+        if subtrees_block:
+            subtrees_linecount = len(subtrees_block)
+            assert subtrees_linecount <= height_of_all_children
+            lines = []
+            for i in range(height):
+                parent_line = parent_block[i]
+                if i < subtrees_linecount:
+                    assert i < height_of_all_children
+                    lines.append(parent_line + subtrees_block[i])
+                else:
+                    lines.append(parent_line)
+            return lines
+        else:
+            return parent_block
+
+
 class AsciiDoubleLineBarRenderer(TreeRenderer):
     """
     Render a SizeTree with two line ASCII bars,
@@ -501,6 +700,7 @@ def get_progress_reporter(
 
 def main():
     terminal_width = shutil.get_terminal_size().columns
+    terminal_height = shutil.get_terminal_size().lines
 
     # Handle commandline interface.
     # TODO switch to argparse?
@@ -513,7 +713,7 @@ def main():
     cliparser.add_option(
         '-w', '--width',
         action='store', type='int', dest='display_width', default=terminal_width,
-        help='total width of all bars', metavar='WIDTH'
+        help='total width of the chart', metavar='WIDTH'
     )
     cliparser.add_option(
         '-x', '--one-file-system',
@@ -543,12 +743,22 @@ def main():
     cliparser.add_option(
         '-1', '--one-line',
         action='store_true', dest='one_line', default=False,
-        help='Show one line bars instead of two line bars'
+        help='Show one line bars instead of two line bars (ignored in columns mode)'
     )
     cliparser.add_option(
         '-c', '--color',
         action='store_true', dest='color', default=False,
         help='Use colors to render bars (instead of ASCII art)'
+    )
+    cliparser.add_option(
+        '-C', '--columns',
+        action='store_true', dest='columns_mode', default=False,
+        help='Build the chart from vertical columns (instead of horizontal bars)'
+    )
+    cliparser.add_option(
+        '-H', '--height',
+        action='store', type='int', dest='display_height', default=terminal_height - 2,
+        help='Height of the chart in columns mode (ignored in bars mode)', metavar='HEIGHT'
     )
 
     (opts, args) = cliparser.parse_args()
@@ -582,7 +792,14 @@ def main():
             )
             size_formatter = SIZE_FORMATTER_BYTES
 
-        if opts.one_line:
+        if opts.columns_mode:
+            renderer = ColumnsRenderer(
+                height=opts.display_height,
+                max_depth=opts.max_depth,
+                size_formatter=size_formatter,
+                color_mode=opts.color
+            )
+        elif opts.one_line:
             if opts.color:
                 renderer = ColorSingleLineBarRenderer(max_depth=opts.max_depth, size_formatter=size_formatter)
             else:

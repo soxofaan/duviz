@@ -7,7 +7,7 @@ import pytest
 
 from duviz import TreeRenderer, SIZE_FORMATTER_COUNT, SIZE_FORMATTER_BYTES, SIZE_FORMATTER_BYTES_BINARY, path_split, \
     SizeTree, AsciiDoubleLineBarRenderer, DuTree, InodeTree, get_progress_reporter, AsciiSingleLineBarRenderer, \
-    ColorDoubleLineBarRenderer, ColorSingleLineBarRenderer, Colorizer
+    ColorDoubleLineBarRenderer, ColorSingleLineBarRenderer, Colorizer, ColumnsRenderer
 
 
 def test_bar_one():
@@ -304,6 +304,68 @@ def test_color_double_line_bar_renderer(tree, width, expected):
 )
 def test_color_single_line_bar_renderer(tree, width, expected):
     assert ColorSingleLineBarRenderer().render(tree, width=width) == expected
+
+
+@pytest.mark.parametrize(
+    ["tree", "max_depth", "width", "height", "color_mode", "expected"],
+    [
+        (TREE123, 2, 20, 5, False, [
+            '\x1b[7m' +
+            '█     ',
+            '█ foo ',
+            '█ 123 ',
+            '█     ',
+            '█▁▁▁▁▁\x1b[27m'
+        ]),
+        (TREE123, 2, 20, 5, True, [
+            '\x1b[44;97m      \x1b[0m',
+            '\x1b[44;97m foo  \x1b[0m',
+            '\x1b[44;97m 123  \x1b[0m',
+            '\x1b[44;97m      \x1b[0m',
+            '\x1b[44;97m      \x1b[0m'
+        ]),
+        (TREE80, 3, 60, 15, False, [
+            '\x1b[7m' +
+            '█              █              █              ',
+            '█              █              █      a       ',
+            '█              █              █      20      ',
+            '█              █      vy      █▁▁▁▁▁▁▁▁▁▁▁▁▁▁',
+            '█              █      50      █     d 11     ',
+            '█              █              █▁▁▁▁▁▁▁▁▁▁▁▁▁▁',
+            '█     foo      █              █              ',
+            '█      80      █              █     ...      ',
+            '█              █▁▁▁▁▁▁▁▁▁▁▁▁▁▁█▁▁▁▁▁▁▁▁▁▁▁▁▁▁',
+            '█              █    dy 11     █    py 11     ',
+            '█              █▁▁▁▁▁▁▁▁▁▁▁▁▁▁█▁▁▁▁▁▁▁▁▁▁▁▁▁▁',
+            '█              █    da 10     ',
+            '█              █▁▁▁▁▁▁▁▁▁▁▁▁▁▁',
+            '█              █     do 9     █     po 9     ',
+            '█▁▁▁▁▁▁▁▁▁▁▁▁▁▁█▁▁▁▁▁▁▁▁▁▁▁▁▁▁█▁▁▁▁▁▁▁▁▁▁▁▁▁▁\x1b[27m'
+        ]),
+        (TREE80, 3, 60, 15, True, [
+            '\x1b[44;97m               \x1b[0m\x1b[41;97m               \x1b[0m\x1b[44;97m               \x1b[0m',
+            '\x1b[44;97m               \x1b[0m\x1b[41;97m               \x1b[0m\x1b[44;97m       a       \x1b[0m',
+            '\x1b[44;97m               \x1b[0m\x1b[41;97m               \x1b[0m\x1b[44;97m       20      \x1b[0m',
+            '\x1b[44;97m               \x1b[0m\x1b[41;97m       vy      \x1b[0m\x1b[44;97m               \x1b[0m',
+            '\x1b[44;97m               \x1b[0m\x1b[41;97m       50      \x1b[0m\x1b[45;30m       d       \x1b[0m',
+            '\x1b[44;97m               \x1b[0m\x1b[41;97m               \x1b[0m\x1b[45;30m       11      \x1b[0m',
+            '\x1b[44;97m      foo      \x1b[0m\x1b[41;97m               \x1b[0m\x1b[46;30m      c 10     \x1b[0m',
+            '\x1b[44;97m       80      \x1b[0m\x1b[41;97m               \x1b[0m\x1b[44;97m      b 9      \x1b[0m',
+            '\x1b[44;97m               \x1b[0m\x1b[41;97m               \x1b[0m\x1b[45;30m      ...      \x1b[0m',
+            '\x1b[44;97m               \x1b[0m\x1b[42;30m       dy      \x1b[0m\x1b[46;30m       py      \x1b[0m',
+            '\x1b[44;97m               \x1b[0m\x1b[42;30m       11      \x1b[0m\x1b[46;30m       11      \x1b[0m',
+            '\x1b[44;97m               \x1b[0m\x1b[43;30m       da      \x1b[0m',
+            '\x1b[44;97m               \x1b[0m\x1b[43;30m       10      \x1b[0m',
+            '\x1b[44;97m               \x1b[0m\x1b[41;97m       do      \x1b[0m\x1b[44;97m       po      \x1b[0m',
+            '\x1b[44;97m               \x1b[0m\x1b[41;97m       9       \x1b[0m\x1b[44;97m       9       \x1b[0m'
+        ]),
+    ]
+)
+def test_columns_renderer(tree, max_depth, width, height, color_mode, expected):
+    output = ColumnsRenderer(height=height, max_depth=max_depth, color_mode=color_mode).render(tree, width=width)
+    print("\n".join(output))
+    print(output)
+    assert output == expected
 
 
 @pytest.mark.parametrize(
