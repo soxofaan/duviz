@@ -49,6 +49,15 @@ def path_split(path: str, base: str = "") -> List[str]:
     return items
 
 
+def truncate(s: str, maxlen: int, truncation_indicator: str = "..."):
+    """
+    Truncate the string s to fit in maxlen chars including a truncation_indicator 
+    placed at the end.
+    """
+    if len(s) <= maxlen:
+        return s
+    return s[: maxlen - len(truncation_indicator)] + truncation_indicator
+
 class SubprocessException(RuntimeError):
     pass
 
@@ -298,19 +307,14 @@ class ColumnsRenderer(TreeRenderer):
             # We use reverse order so that the root is always the same color regardless of the depth
             for i in reversed(range(max_depth + 1)):
                 cycle = itertools.cycle(
-                    c.COLOR_CYCLE_BMC if i % 2 == 0 else c.COLOR_CYCLE_RGY
+                    c._COLOR_CYCLE_BMC if i % 2 == 0 else c._COLOR_CYCLE_RGY
                 )
                 self.colorizers.append(cycle)
 
     def render(self, tree: SizeTree, width: int) -> List[str]:
-        lines = self._render(
-            tree, width // (self.max_depth + 1), self.height, self.max_depth
+        return self._render(
+            tree, width // (self.max_depth + 1), self.height, self.max_depth, topmost=True, leftmost=True
         )
-        if lines and not self.color_mode:
-            # The monochrome rendering must be displayed in reverse mode
-            lines[0] = "\x1b[7m" + lines[0]
-            lines[-1] += "\x1b[27m"
-        return lines
 
     def render_node(
         self,
@@ -318,72 +322,76 @@ class ColumnsRenderer(TreeRenderer):
         width: int,
         height: int,
         depth: int,
+        topmost: bool,
+        leftmost: bool,
     ) -> List[str]:
         """Render a single node"""
-        def _truncate(s, maxlen):
-            truncation_indicator = "..."
-            if len(s) <= maxlen:
-                return s
-            return s[: maxlen - len(truncation_indicator)] + truncation_indicator
-
         if self.color_mode:
             color = next(self.colorizers[depth])
             prefix = color
-            suffix = Colorizer.COLOR_RESET
+            suffix = Colorizer._COLOR_RESET
             left = ""
-            border_lines = 0
+            right = ""
+            top_border = " "
+            bottom_border = " "
+            horiz_padding = 1
         else:
             prefix = ""
             suffix = ""
-            left = "█"
-            border_lines = 1
-        assert height >= border_lines
+            left = "|" if leftmost else ""
+            right = "|"
+            top_border = "~" if topmost else " "
+            bottom_border = "_"
+            horiz_padding = 2
         if node:
-            text_lines = min(2, height - border_lines)
+            text_lines = min(2, height)
             size_str = self._size_formatter.format(node.size)
             if text_lines == 0:
                 label_line_arr = []
             elif text_lines == 1:
                 name_size_separator = " "
                 name_maxlen = (
-                    width - len(size_str) - len(left) - len(name_size_separator)
+                    width - len(size_str) - len(left) - len(right) - len(name_size_separator) - 2 * horiz_padding
                 )
                 label_line_arr = [
-                    _truncate(node.name, name_maxlen) + name_size_separator + size_str
+                    truncate(node.name, name_maxlen) + name_size_separator + size_str
                 ]
             elif text_lines == 2:
-                name_maxlen = width - len(left)
+                name_maxlen = width - len(left) - len(right) - 2 * horiz_padding
                 label_line_arr = [
-                    _truncate(node.name, name_maxlen),
+                    truncate(node.name, name_maxlen),
                     size_str,
                 ]
             else:
-                assert False
+                raise ValueError(text_lines)
         else:
             # When called without a specific node, it means that we need to
             # render a block to collectively represent multiple directories that
             # are not large enough in themselves to get their own block.
-            text_lines = min(1, height - border_lines)
+            text_lines = min(1, height)
             if text_lines == 0:
                 label_line_arr = []
             elif text_lines == 1:
                 label_line_arr = ["..."]
             else:
-                assert False
+                raise ValueError(text_lines)
 
-        padding_lines = height - border_lines - text_lines
-        if self.color_mode:
-            padding_lines_above = padding_lines // 2
-        else:
-            padding_lines_above = (padding_lines + 1) // 2
+        padding_lines = height - text_lines
+        padding_lines_above = padding_lines // 2
         padding_lines_below = padding_lines - padding_lines_above
 
-        lines = []
+        lines: List[str] = []
 
-        def _bar(label="", fill=" "):
+        def _bar(label=""):
+            if len(lines) == height - 1:
+                fill = bottom_border
+            elif len(lines) == 0:
+                fill = top_border
+            else:
+                fill = " "
             lines.append(
                 prefix
-                + self.bar(width=width, left=left, fill=fill, right="", label=label)
+                + self.bar(width=width, left=left + fill, fill=fill, right=fill + right, label=label)
                 + suffix
             )
 
@@ -393,17 +401,15 @@ class ColumnsRenderer(TreeRenderer):
             _bar(line)
         for i in range(padding_lines_below):
             _bar()
-        if not self.color_mode:
-            _bar(fill="▁")
 
         return lines
 
-    def _render(self, tree: SizeTree, width: int, height: int, depth: int) -> List[str]:
+    def _render(self, tree: SizeTree, width: int, height: int, depth: int, topmost: bool, leftmost: bool) -> List[str]:
         if height < 1:
             return []
 
         # Render current dir.
-        parent_block = self.render_node(tree, width=width, height=height, depth=depth)
+        parent_block = self.render_node(tree, width=width, height=height, depth=depth, topmost=topmost, leftmost=leftmost)
         if depth == 0:
             return parent_block
 
@@ -423,8 +429,6 @@ class ColumnsRenderer(TreeRenderer):
             cumulative_size += child.size
             curr_row = int(round(float(height * cumulative_size) / tree.size, 0))
             block_height = max(0, curr_row - last_row)
-            if not self.color_mode and block_height == 1:
-                block_height = 0
             # Don't let the grid-alignment make any blocks more than twice as
             # tall than without alignment.
             block_height = min(
@@ -447,33 +451,37 @@ class ColumnsRenderer(TreeRenderer):
             # shortest block height encountered so far. Don't allow taller
             # blocks than that in the following iterations.
             last_block_height = block_height
-            subtrees_block.extend(self._render(child, width, block_height, depth - 1))
+            subtrees_block.extend(self._render(child, width, block_height, depth - 1, topmost=topmost, leftmost=False))
+            topmost = False
             last_row += block_height
 
         # An extra block to represent small directories that didn't get their
         # own block and to make up for the deficit caused by grid alignment.
         if curr_row > last_row:
-            subtrees_block.extend(
-                self.render_node(
-                    None, width=width, height=curr_row - last_row, depth=depth - 1
-                )
+            lines = self.render_node(
+                None, width=width, height=curr_row - last_row, depth=depth - 1, topmost=topmost, leftmost=False
             )
+            topmost = False
+            for line in lines:
+                subtrees_block.append(line)
 
         # Assemble blocks.
-        if subtrees_block:
-            subtrees_linecount = len(subtrees_block)
-            assert subtrees_linecount <= height_of_all_children
-            lines = []
-            for i in range(height):
-                parent_line = parent_block[i]
-                if i < subtrees_linecount:
-                    assert i < height_of_all_children
-                    lines.append(parent_line + subtrees_block[i])
-                else:
-                    lines.append(parent_line)
-            return lines
-        else:
-            return parent_block
+        lines = []
+        subtrees_linecount = len(subtrees_block)
+        assert subtrees_linecount <= height_of_all_children
+        desired_length = width * (depth + 1)
+        for i in range(height):
+            parent_line = parent_block[i]
+            if i < subtrees_linecount:
+                assert i < height_of_all_children
+                line = parent_line + subtrees_block[i]
+            else:
+                line = parent_line
+            if not self.color_mode:
+                # Add a background pattern to make the content stand out
+                line += "▒" * (desired_length - len(line))
+            lines.append(line)
+        return lines
 
 
 class AsciiDoubleLineBarRenderer(TreeRenderer):
@@ -512,7 +520,7 @@ class AsciiDoubleLineBarRenderer(TreeRenderer):
         ]
 
     def _render(self, tree: SizeTree, width: int, depth: int) -> List[str]:
-        lines = []
+        lines: List[str] = []
         if width < 1 or depth < 0:
             return lines
 
@@ -757,7 +765,7 @@ def main():
     )
     cliparser.add_option(
         '-H', '--height',
-        action='store', type='int', dest='display_height', default=terminal_height - 2,
+        action='store', type='int', dest='display_height', default=terminal_height - 5,
         help='Height of the chart in columns mode (ignored in bars mode)', metavar='HEIGHT'
     )
 

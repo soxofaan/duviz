@@ -7,7 +7,7 @@ import pytest
 
 from duviz import TreeRenderer, SIZE_FORMATTER_COUNT, SIZE_FORMATTER_BYTES, SIZE_FORMATTER_BYTES_BINARY, path_split, \
     SizeTree, AsciiDoubleLineBarRenderer, DuTree, InodeTree, get_progress_reporter, AsciiSingleLineBarRenderer, \
-    ColorDoubleLineBarRenderer, ColorSingleLineBarRenderer, Colorizer, ColumnsRenderer
+    ColorDoubleLineBarRenderer, ColorSingleLineBarRenderer, Colorizer, ColumnsRenderer, truncate
 
 
 def test_bar_one():
@@ -309,13 +309,12 @@ def test_color_single_line_bar_renderer(tree, width, expected):
 @pytest.mark.parametrize(
     ["tree", "max_depth", "width", "height", "color_mode", "expected"],
     [
-        (TREE123, 2, 20, 5, False, [
-            '\x1b[7m' +
-            '█     ',
-            '█ foo ',
-            '█ 123 ',
-            '█     ',
-            '█▁▁▁▁▁\x1b[27m'
+        (TREE123, 1, 20, 5, False, [
+            '|~~~~~~~~|▒▒▒▒▒▒▒▒▒▒',
+            '|  foo   |▒▒▒▒▒▒▒▒▒▒',
+            '|  123   |▒▒▒▒▒▒▒▒▒▒',
+            '|        |▒▒▒▒▒▒▒▒▒▒',
+            '|________|▒▒▒▒▒▒▒▒▒▒'
         ]),
         (TREE123, 2, 20, 5, True, [
             '\x1b[44;97m      \x1b[0m',
@@ -325,22 +324,21 @@ def test_color_single_line_bar_renderer(tree, width, expected):
             '\x1b[44;97m      \x1b[0m'
         ]),
         (TREE80, 3, 60, 15, False, [
-            '\x1b[7m' +
-            '█              █              █              ',
-            '█              █              █      a       ',
-            '█              █              █      20      ',
-            '█              █      vy      █▁▁▁▁▁▁▁▁▁▁▁▁▁▁',
-            '█              █      50      █     d 11     ',
-            '█              █              █▁▁▁▁▁▁▁▁▁▁▁▁▁▁',
-            '█     foo      █              █              ',
-            '█      80      █              █     ...      ',
-            '█              █▁▁▁▁▁▁▁▁▁▁▁▁▁▁█▁▁▁▁▁▁▁▁▁▁▁▁▁▁',
-            '█              █    dy 11     █    py 11     ',
-            '█              █▁▁▁▁▁▁▁▁▁▁▁▁▁▁█▁▁▁▁▁▁▁▁▁▁▁▁▁▁',
-            '█              █    da 10     ',
-            '█              █▁▁▁▁▁▁▁▁▁▁▁▁▁▁',
-            '█              █     do 9     █     po 9     ',
-            '█▁▁▁▁▁▁▁▁▁▁▁▁▁▁█▁▁▁▁▁▁▁▁▁▁▁▁▁▁█▁▁▁▁▁▁▁▁▁▁▁▁▁▁\x1b[27m'
+            '|~~~~~~~~~~~~~|~~~~~~~~~~~~~~|~~~~~~~~~~~~~~|▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒',
+            '|             |              |      a       |▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒',
+            '|             |              |      20      |▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒',
+            '|             |      vy      |______________|▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒',
+            '|             |      50      |      d       |▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒',
+            '|             |              |______11______|▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒',
+            '|     foo     |              |_____c 10_____|▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒',
+            '|      80     |              |_____b 9______|▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒',
+            '|             |______________|_____...______|▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒',
+            '|             |      dy      |      py      |▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒',
+            '|             |______11______|______11______|▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒',
+            '|             |      da      |▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒',
+            '|             |______10______|▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒',
+            '|             |      do      |      po      |▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒',
+            '|_____________|______9_______|______9_______|▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒'
         ]),
         (TREE80, 3, 60, 15, True, [
             '\x1b[44;97m               \x1b[0m\x1b[41;97m               \x1b[0m\x1b[44;97m               \x1b[0m',
@@ -456,6 +454,18 @@ def test_path_split(path, expected):
 )
 def test_path_split_with_base(path, base, expected):
     assert expected == path_split(path, base)
+
+
+@pytest.mark.parametrize(
+    ["s", "maxlen", "truncation_indicator", "expected"],
+    [
+        ('Slartibartfast', 20, '...', 'Slartibartfast'),
+        ('Slartibartfast', 10, '...', 'Slartib...'),
+        ('Slartibartfast', 10, '[...]', 'Slart[...]'),
+    ]
+)
+def test_truncate(s, maxlen, truncation_indicator, expected):
+    assert expected == truncate(s, maxlen, truncation_indicator)
 
 
 def _dedent(s: str) -> str:
