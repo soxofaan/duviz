@@ -53,6 +53,10 @@ class SubprocessException(RuntimeError):
     pass
 
 
+class ParseException(ValueError):
+    pass
+
+
 class SizeTree:
     """
     Base class for a tree of nodes where each node has a size and zero or more sub-nodes.
@@ -208,6 +212,51 @@ class InodeTree(SizeTree):
         tree = cls.from_path_size_pairs(pairs=pairs(ls_listing), root=root)
         tree._recalculate_own_sizes_to_total_sizes()
         return tree
+
+
+class ZipListingParseException(ParseException):
+    pass
+
+
+def size_tree_from_zip_listing(listing: Iterable[str]) -> SizeTree:
+    def pairs(listing: Iterator[str]) -> Iterator[Tuple[List[str], int]]:
+        row_regex = re.compile(r"^\s*(\d+)\s+[\d-]+\s+[\d:]+\s+(.*)$")
+        for line in listing:
+            if line.startswith("---"):
+                # Reached table end
+                return
+            mo = row_regex.match(line)
+            if not mo:
+                raise ZipListingParseException(
+                    f"Failed to parse zip listing line {line}"
+                )
+            size, path = mo.group(1, 2)
+            yield path_split(path), int(size)
+
+    listing = iter(listing)
+    # Try to parse zip listing header
+    archive_line = next(listing)
+    mo = re.match(r"^Archive:\s*(.+)$", archive_line)
+    if not mo:
+        raise ZipListingParseException(
+            f"Failed to parse Archive name from {archive_line}."
+        )
+    archive_name = mo.group(1)
+
+    header_line = next(listing)
+    table_header = re.split(r"\s+", header_line.strip())
+    if table_header != ["Length", "Date", "Time", "Name"]:
+        raise ZipListingParseException(f"Unexpected table header {header_line}.")
+    header_separator = next(listing)
+    header_separator_regex = re.compile(r"^[- ]+$")
+    if not header_separator_regex.match(header_separator):
+        raise ZipListingParseException(
+            f"Unexpected table separator {header_separator}."
+        )
+
+    tree = SizeTree.from_path_size_pairs(pairs=pairs(listing), root=archive_name)
+    tree._recalculate_own_sizes_to_total_sizes()
+    return tree
 
 
 class SizeFormatter:

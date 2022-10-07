@@ -5,9 +5,23 @@ from typing import List
 
 import pytest
 
-from duviz import TreeRenderer, SIZE_FORMATTER_COUNT, SIZE_FORMATTER_BYTES, SIZE_FORMATTER_BYTES_BINARY, path_split, \
-    SizeTree, AsciiDoubleLineBarRenderer, DuTree, InodeTree, get_progress_reporter, AsciiSingleLineBarRenderer, \
-    ColorDoubleLineBarRenderer, ColorSingleLineBarRenderer, Colorizer
+from duviz import (
+    SIZE_FORMATTER_BYTES,
+    SIZE_FORMATTER_BYTES_BINARY,
+    SIZE_FORMATTER_COUNT,
+    AsciiDoubleLineBarRenderer,
+    AsciiSingleLineBarRenderer,
+    ColorDoubleLineBarRenderer,
+    Colorizer,
+    ColorSingleLineBarRenderer,
+    DuTree,
+    InodeTree,
+    SizeTree,
+    TreeRenderer,
+    get_progress_reporter,
+    path_split,
+    size_tree_from_zip_listing,
+)
 
 
 def test_bar_one():
@@ -644,3 +658,39 @@ def test_get_progress_reporter():
     deltas = [i1-i0 for (i0, i1) in zip(indexes[:-1], indexes[1:])]
     assert all(d < 5 for d in deltas[:5])
     assert all(d > 9 for d in deltas[-5:])
+
+
+class TestZipListing:
+    def _check_render(self, listing: str, expected: str, width=40):
+        tree = size_tree_from_zip_listing(_dedent(listing).split("\n"))
+        result = AsciiDoubleLineBarRenderer().render(tree, width=width)
+        assert result == _dedent_and_split(expected)
+
+    def test_basic(self):
+        self._check_render(
+            listing="""
+                Archive:  tmp.zip
+                  Length      Date    Time    Name
+                ---------  ---------- -----   ----
+                        0  2022-10-08 00:27   docs/
+                        0  2022-10-08 00:27   docs/img/
+                     5456  2022-10-08 00:27   docs/img/logo.png
+                     3634  2022-10-08 00:26   docs/api.txt
+                     1575  2022-10-08 00:26   docs/intro.txt
+                     2244  2022-10-08 00:25   README.md
+                ---------                     -------
+                    12909                     6 files
+                """,
+            expected="""
+                ________________________________________________________________________________
+                [                                   tmp.zip                                    ]
+                [____________________________________12.91k____________________________________]
+                [                              docs                              ][ README.md  ]
+                [_____________________________10.66k_____________________________][___2.24k____]
+                [              img              ][       api.txt       ][intro.tx]              
+                [_____________5.46k_____________][________3.63k________][_1.57k__]              
+                [            logo.png           ]                                               
+                [_____________5.46k_____________]                                               
+                """,
+            width=80,
+        )
