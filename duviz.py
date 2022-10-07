@@ -18,7 +18,7 @@ import subprocess
 import sys
 import time
 import unicodedata
-from typing import List, Optional, Dict, Iterable, Tuple, Callable, Iterator
+from typing import List, Optional, Dict, Iterable, Tuple, Callable, Iterator, Any
 
 
 # TODO: catch absence/failure of du/ls subprocesses
@@ -69,7 +69,7 @@ class SizeTree:
 
     @classmethod
     def from_path_size_pairs(
-        cls, pairs: Iterable[Tuple[str, int]], root: str = "/"
+        cls, pairs: Iterable[Tuple[List[str], int]], root: str = "/"
     ) -> "SizeTree":
         """
         Build SizeTree from given (path, size) pairs
@@ -137,10 +137,10 @@ class DuTree(SizeTree):
     def from_du_listing(
         cls,
         root: str,
-        du_listing,
+        du_listing: Iterable[str],
         progress_report: Optional[Callable[[str], None]] = None,
     ) -> "DuTree":
-        def pairs(lines: Iterable[str]) -> Iterator[Tuple[str, int]]:
+        def pairs(lines: Iterable[str]) -> Iterator[Tuple[List[str], int]]:
             for line in lines:
                 kb, path = cls._du_regex.match(line).group(1, 2)
                 if progress_report:
@@ -173,7 +173,7 @@ class InodeTree(SizeTree):
     def from_ls_listing(
         cls, root: str, ls_listing: str, progress_report: Callable[[str], None] = None
     ) -> "InodeTree":
-        def pairs(listing: str) -> Iterator[Tuple[str, int]]:
+        def pairs(listing: str) -> Iterator[Tuple[List[str], int]]:
             all_inodes = set()
 
             # Process data per directory block (separated by two newlines)
@@ -478,15 +478,15 @@ class ColorSingleLineBarRenderer(AsciiSingleLineBarRenderer):
 def get_progress_reporter(
     max_interval: float = 1,
     terminal_width: int = 80,
-    write: Callable[[str], None] = sys.stdout.write,
-    time: Callable[[], int] = time.time,
+    write: Callable[[str], Any] = sys.stdout.write,
+    time: Callable[[], float] = time.time,
 ) -> Callable[[str], None]:
     """
     Create a progress reporting function that only actually prints in intervals
     """
-    next_time = 0
+    next_time = 0.0
     # Start printing frequently.
-    interval = 0
+    interval = 0.0
 
     def progress(info: str):
         nonlocal next_time, interval
