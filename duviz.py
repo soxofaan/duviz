@@ -18,7 +18,7 @@ import subprocess
 import sys
 import time
 import unicodedata
-from typing import List
+from typing import List, Optional, Dict, Iterable, Tuple, Callable, Iterator
 
 
 # TODO: catch absence/failure of du/ls subprocesses
@@ -26,7 +26,7 @@ from typing import List
 # TODO: option to sort alphabetically (instead of on size)
 
 
-def path_split(path, base=''):
+def path_split(path: str, base: str = "") -> List[str]:
     """
     Split a file system path in a list of path components (as a recursive os.path.split()),
     optionally only up to a given base path.
@@ -58,13 +58,19 @@ class SizeTree:
     Base class for a tree of nodes where each node has a size and zero or more sub-nodes.
     """
 
-    def __init__(self, name, size=0, children=None):
+    __slots__ = ["name", "size", "children"]
+
+    def __init__(
+        self, name: str, size: int = 0, children: Optional[Dict[str, "SizeTree"]] = None
+    ):
         self.name = name
         self.size = size
         self.children = children or {}
 
     @classmethod
-    def from_path_size_pairs(cls, pairs, root='/'):
+    def from_path_size_pairs(
+        cls, pairs: Iterable[Tuple[str, int]], root: str = "/"
+    ) -> "SizeTree":
         """
         Build SizeTree from given (path, size) pairs
         """
@@ -79,11 +85,11 @@ class SizeTree:
             cursor.size = size
         return tree
 
-    def __lt__(self, other):
+    def __lt__(self, other: "SizeTree") -> bool:
         # We only implement rich comparison method __lt__ so make sorting work.
         return (self.size, self.name) < (other.size, other.name)
 
-    def _recalculate_own_sizes_to_total_sizes(self):
+    def _recalculate_own_sizes_to_total_sizes(self) -> int:
         """
         If provided sizes are just own sizes and sizes of children still have to be included
         """
@@ -99,7 +105,13 @@ class DuTree(SizeTree):
     _du_regex = re.compile(r'([0-9]*)\s*(.*)')
 
     @classmethod
-    def from_du(cls, root, one_filesystem=False, dereference=False, progress_report=None):
+    def from_du(
+        cls,
+        root: str,
+        one_filesystem: bool = False,
+        dereference: bool = False,
+        progress_report: Callable[[str], None] = None,
+    ) -> "DuTree":
         # Measure size in 1024 byte blocks. The GNU-du option -b enables counting
         # in bytes directly, but it is not available in BSD-du.
         command = ['du', '-k']
@@ -122,8 +134,13 @@ class DuTree(SizeTree):
             )
 
     @classmethod
-    def from_du_listing(cls, root, du_listing, progress_report=None):
-        def pairs(lines):
+    def from_du_listing(
+        cls,
+        root: str,
+        du_listing,
+        progress_report: Optional[Callable[[str], None]] = None,
+    ) -> "DuTree":
+        def pairs(lines: Iterable[str]) -> Iterator[Tuple[str, int]]:
             for line in lines:
                 kb, path = cls._du_regex.match(line).group(1, 2)
                 if progress_report:
@@ -136,8 +153,10 @@ class DuTree(SizeTree):
 class InodeTree(SizeTree):
 
     @classmethod
-    def from_ls(cls, root, progress_report=None):
-        command = ['ls', '-aiR', root]
+    def from_ls(
+        cls, root: str, progress_report: Callable[[str], None] = None
+    ) -> "InodeTree":
+        command = ["ls", "-aiR", root]
         try:
             process = subprocess.Popen(command, stdout=subprocess.PIPE)
         except OSError:
@@ -151,9 +170,10 @@ class InodeTree(SizeTree):
             )
 
     @classmethod
-    def from_ls_listing(cls, root, ls_listing, progress_report=None):
-
-        def pairs(listing):
+    def from_ls_listing(
+        cls, root: str, ls_listing: str, progress_report: Callable[[str], None] = None
+    ) -> "InodeTree":
+        def pairs(listing: str) -> Iterator[Tuple[str, int]]:
             all_inodes = set()
 
             # Process data per directory block (separated by two newlines)
@@ -191,7 +211,9 @@ class InodeTree(SizeTree):
 
 
 class SizeFormatter:
-    """Render a (byte) count in compact human readable way: 12, 34k, 56M, ..."""
+    """Render a (byte) count in compact human-readable way: 12, 34k, 56M, ..."""
+
+    __slots__ = ["base", "formats"]
 
     def __init__(self, base: int, formats: List[str]):
         self.base = base
@@ -220,7 +242,16 @@ class TreeRenderer:
     def render(self, tree: SizeTree, width: int) -> List[str]:
         raise NotImplementedError
 
-    def bar(self, label: str, width: int, fill='-', left='[', right=']', small='|', label_padding='') -> str:
+    def bar(
+        self,
+        label: str,
+        width: int,
+        fill: str = "-",
+        left: str = "[",
+        right: str = "]",
+        small: str = "|",
+        label_padding: str = "",
+    ) -> str:
         """
         Render a label as string of certain width with given left, right part and fill.
 
@@ -345,36 +376,41 @@ class Colorizer:
     _END = '\x02'
 
     # Red, Green, Yellow
-    COLOR_CYCLE_RGY = ['\x1b[41;97m', '\x1b[42;30m', '\x1b[43;30m']
+    _COLOR_CYCLE_RGY = ["\x1b[41;97m", "\x1b[42;30m", "\x1b[43;30m"]
 
     # Blue, Magenta, Cyan
-    COLOR_CYCLE_BMC = ['\x1b[44;97m', '\x1b[45;30m', '\x1b[46;30m']
+    _COLOR_CYCLE_BMC = ["\x1b[44;97m", "\x1b[45;30m", "\x1b[46;30m"]
 
-    COLOR_RESET = '\x1b[0m'
+    _COLOR_RESET = "\x1b[0m"
 
-    def wrap(self, s: str) -> str:
+    @classmethod
+    def wrap(cls, s: str) -> str:
         """Wrap given string in colorize markers"""
-        return self._START + s + self._END
+        return cls._START + s + cls._END
 
-    def str_len(self, b: str) -> int:
-        return len(b.replace(self._START, '').replace(self._END, ''))
+    @classmethod
+    def str_len(cls, b: str) -> int:
+        return len(b.replace(cls._START, "").replace(cls._END, ""))
 
-    def get_colorize(self, colors: List[str]):
+    @classmethod
+    def _get_colorize(cls, colors: List[str]):
         """Construct function that replaces markers with color codes (cycling through given color codes)"""
         color_cycle = itertools.cycle(colors)
 
         def colorize(line: str) -> str:
-            line = re.sub(self._START, lambda m: next(color_cycle), line)
-            line = re.sub(self._END, self.COLOR_RESET, line)
+            line = re.sub(cls._START, lambda m: next(color_cycle), line)
+            line = re.sub(cls._END, cls._COLOR_RESET, line)
             return line
 
         return colorize
 
-    def get_colorize_rgy(self):
-        return self.get_colorize(self.COLOR_CYCLE_RGY)
+    @classmethod
+    def get_colorize_rgy(cls):
+        return cls._get_colorize(cls._COLOR_CYCLE_RGY)
 
-    def get_colorize_bmc(self):
-        return self.get_colorize(self.COLOR_CYCLE_BMC)
+    @classmethod
+    def get_colorize_bmc(cls):
+        return cls._get_colorize(cls._COLOR_CYCLE_BMC)
 
 
 class ColorDoubleLineBarRenderer(AsciiDoubleLineBarRenderer):
@@ -439,7 +475,12 @@ class ColorSingleLineBarRenderer(AsciiSingleLineBarRenderer):
         return self._colorizer.str_len(b)
 
 
-def get_progress_reporter(max_interval=1, terminal_width=80, write=sys.stdout.write, time=time.time):
+def get_progress_reporter(
+    max_interval: float = 1,
+    terminal_width: int = 80,
+    write: Callable[[str], None] = sys.stdout.write,
+    time: Callable[[], int] = time.time,
+) -> Callable[[str], None]:
     """
     Create a progress reporting function that only actually prints in intervals
     """
