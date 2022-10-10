@@ -228,7 +228,7 @@ def size_tree_from_zip_listing(listing: Iterable[str]) -> SizeTree:
             mo = row_regex.match(line)
             if not mo:
                 raise ZipListingParseException(
-                    f"Failed to parse zip listing line {line}".format(line=line)
+                    "Failed to parse zip listing line {line}".format(line=line)
                 )
             size, path = mo.group(1, 2)
             yield path_split(path), int(size)
@@ -239,7 +239,7 @@ def size_tree_from_zip_listing(listing: Iterable[str]) -> SizeTree:
     mo = re.match(r"^Archive:\s*(.+)$", archive_line)
     if not mo:
         raise ZipListingParseException(
-            "Failed to parse Archive name from {archive_line}."
+            "Failed to parse archive name from {archive_line}."
         )
     archive_name = mo.group(1)
 
@@ -253,7 +253,7 @@ def size_tree_from_zip_listing(listing: Iterable[str]) -> SizeTree:
     header_separator_regex = re.compile(r"^[- ]+$")
     if not header_separator_regex.match(header_separator):
         raise ZipListingParseException(
-            f"Unexpected table separator {header_separator}."
+            "Unexpected table separator {header_separator}."
         )
 
     tree = SizeTree.from_path_size_pairs(pairs=pairs(listing), root=archive_name)
