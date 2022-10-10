@@ -24,6 +24,7 @@ from typing import List, Optional, Dict, Iterable, Tuple, Callable, Iterator, An
 # TODO: catch absence/failure of du/ls subprocesses
 # TODO: how to handle unreadable subdirs in du/ls?
 # TODO: option to sort alphabetically (instead of on size)
+# TODO: use pathlib.Path instead of naive strings
 
 
 def path_split(path: str, base: str = "") -> List[str]:
@@ -218,47 +219,70 @@ class ZipListingParseException(ParseException):
     pass
 
 
-def size_tree_from_zip_listing(listing: Iterable[str]) -> SizeTree:
-    def pairs(listing: Iterator[str]) -> Iterator[Tuple[List[str], int]]:
-        row_regex = re.compile(r"^\s*(\d+)\s+[\d-]+\s+[\d:]+\s+(.*)$")
-        for line in listing:
-            if line.startswith("---"):
-                # Reached table end
-                return
-            mo = row_regex.match(line)
-            if not mo:
-                raise ZipListingParseException(
-                    "Failed to parse zip listing line {line}".format(line=line)
+class ZipListingParser:
+    def list_and_parse(self, zip_path: str) -> SizeTree:
+        """
+        Run `unzip -l` on a ZIP file and parse the listing to a `SizeTree`
+        :param zip_path:  ZIP file path
+        :return: size tree
+        """
+        command = ["unzip", "-l", zip_path]
+        try:
+            process = subprocess.Popen(command, stdout=subprocess.PIPE)
+        except OSError:
+            raise SubprocessException('Failed to launch "unzip" subprocess.')
+
+        with contextlib.closing(process.stdout):
+            return self.parse_listing(
+                listing=(l.decode("utf-8") for l in process.stdout),
+            )
+
+    def parse_listing(self, listing: Iterable[str]) -> SizeTree:
+        def pairs(listing: Iterator[str]) -> Iterator[Tuple[List[str], int]]:
+            row_regex = re.compile(r"^\s*(\d+)\s+[\d-]+\s+[\d:]+\s+(.*)$")
+            for line in listing:
+                if line.startswith("---"):
+                    # Reached table end
+                    return
+                mo = row_regex.match(line)
+                if not mo:
+                    raise ZipListingParseException(
+                        "Failed to parse zip listing line {line}".format(line=line)
+                    )
+                size, path = mo.group(1, 2)
+                yield path_split(path), int(size)
+
+        listing = iter(listing)
+        # Try to parse zip listing header
+        archive_line = next(listing)
+        mo = re.match(r"^Archive:\s*(.+)$", archive_line)
+        if not mo:
+            raise ZipListingParseException(
+                "Failed to parse archive name from {archive_line}.".format(
+                    archive_line=archive_line
                 )
-            size, path = mo.group(1, 2)
-            yield path_split(path), int(size)
+            )
+        archive_name = mo.group(1)
 
-    listing = iter(listing)
-    # Try to parse zip listing header
-    archive_line = next(listing)
-    mo = re.match(r"^Archive:\s*(.+)$", archive_line)
-    if not mo:
-        raise ZipListingParseException(
-            "Failed to parse archive name from {archive_line}."
-        )
-    archive_name = mo.group(1)
+        header_line = next(listing)
+        table_header = re.split(r"\s+", header_line.strip())
+        if table_header != ["Length", "Date", "Time", "Name"]:
+            raise ZipListingParseException(
+                "Unexpected table header {header_line}.".format(header_line=header_line)
+            )
+        header_separator = next(listing)
+        header_separator_regex = re.compile(r"^[- ]+$")
+        if not header_separator_regex.match(header_separator):
+            raise ZipListingParseException(
+                "Unexpected table separator {header_separator}.".format(
+                    header_separator=header_separator
+                )
+            )
 
-    header_line = next(listing)
-    table_header = re.split(r"\s+", header_line.strip())
-    if table_header != ["Length", "Date", "Time", "Name"]:
-        raise ZipListingParseException(
-            "Unexpected table header {header_line}.".format(header_line=header_line)
-        )
-    header_separator = next(listing)
-    header_separator_regex = re.compile(r"^[- ]+$")
-    if not header_separator_regex.match(header_separator):
-        raise ZipListingParseException(
-            "Unexpected table separator {header_separator}."
-        )
-
-    tree = SizeTree.from_path_size_pairs(pairs=pairs(listing), root=archive_name)
-    tree._recalculate_own_sizes_to_total_sizes()
-    return tree
+        tree = SizeTree.from_path_size_pairs(pairs=pairs(listing), root=archive_name)
+        # TODO: avoid call of private method
+        tree._recalculate_own_sizes_to_total_sizes()
+        return tree
 
 
 class SizeFormatter:
@@ -601,6 +625,11 @@ def main():
         action='store_true', dest='color', default=False,
         help='Use colors to render bars (instead of ASCII art)'
     )
+    cliparser.add_option(
+        "-z", "--zip",
+        action="store_true", dest="zip_listing", default=False,
+        help="Parse sizes from ZIP file listing.",
+    )
 
     (opts, args) = cliparser.parse_args()
 
@@ -625,6 +654,10 @@ def main():
         if opts.inode_count:
             tree = InodeTree.from_ls(root=directory, progress_report=progress_report)
             size_formatter = SIZE_FORMATTER_COUNT
+        elif opts.zip_listing:
+            # TODO: autodetect zip_listing mode from file name?
+            tree = ZipListingParser().list_and_parse(zip_path=directory)
+            size_formatter = SIZE_FORMATTER_BYTES
         else:
             tree = DuTree.from_du(
                 root=directory,

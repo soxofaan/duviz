@@ -18,9 +18,9 @@ from duviz import (
     InodeTree,
     SizeTree,
     TreeRenderer,
+    ZipListingParser,
     get_progress_reporter,
     path_split,
-    size_tree_from_zip_listing,
 )
 
 
@@ -662,7 +662,7 @@ def test_get_progress_reporter():
 
 class TestZipListing:
     def _check_render(self, listing: str, expected: str, width=40):
-        tree = size_tree_from_zip_listing(_dedent(listing).split("\n"))
+        tree = ZipListingParser().parse_listing(_dedent(listing).split("\n"))
         result = AsciiDoubleLineBarRenderer().render(tree, width=width)
         assert result == _dedent_and_split(expected)
 
