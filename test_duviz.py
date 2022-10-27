@@ -462,6 +462,7 @@ def test_path_split_with_base(path, base, expected):
         ('Slartibartfast', 20, '...', 'Slartibartfast'),
         ('Slartibartfast', 10, '...', 'Slartib...'),
         ('Slartibartfast', 10, '[...]', 'Slart[...]'),
+        ('Slartibartfast', 2, '...', '..'),
     ]
 )
 def test_truncate(s, maxlen, truncation_indicator, expected):

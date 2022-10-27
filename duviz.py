@@ -56,7 +56,9 @@ def truncate(s: str, maxlen: int, truncation_indicator: str = "..."):
     """
     if len(s) <= maxlen:
         return s
-    return s[: maxlen - len(truncation_indicator)] + truncation_indicator
+    if len(truncation_indicator) <= maxlen:
+        return s[: maxlen - len(truncation_indicator)] + truncation_indicator
+    return truncation_indicator[: maxlen]
 
 class SubprocessException(RuntimeError):
     pass
