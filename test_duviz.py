@@ -7,7 +7,7 @@ import pytest
 
 from duviz import TreeRenderer, SIZE_FORMATTER_COUNT, SIZE_FORMATTER_BYTES, SIZE_FORMATTER_BYTES_BINARY, path_split, \
     SizeTree, AsciiDoubleLineBarRenderer, DuTree, InodeTree, get_progress_reporter, AsciiSingleLineBarRenderer, \
-    ColorDoubleLineBarRenderer, ColorSingleLineBarRenderer, Colorizer
+    ColorDoubleLineBarRenderer, ColorSingleLineBarRenderer, Colorizer, ColumnsRenderer, truncate
 
 
 def test_bar_one():
@@ -307,6 +307,66 @@ def test_color_single_line_bar_renderer(tree, width, expected):
 
 
 @pytest.mark.parametrize(
+    ["tree", "max_depth", "width", "height", "color_mode", "expected"],
+    [
+        (TREE123, 1, 20, 5, False, [
+            '|~~~~~~~~|▒▒▒▒▒▒▒▒▒▒',
+            '|  foo   |▒▒▒▒▒▒▒▒▒▒',
+            '|  123   |▒▒▒▒▒▒▒▒▒▒',
+            '|        |▒▒▒▒▒▒▒▒▒▒',
+            '|________|▒▒▒▒▒▒▒▒▒▒'
+        ]),
+        (TREE123, 2, 20, 5, True, [
+            '\x1b[44;97m      \x1b[0m',
+            '\x1b[44;97m foo  \x1b[0m',
+            '\x1b[44;97m 123  \x1b[0m',
+            '\x1b[44;97m      \x1b[0m',
+            '\x1b[44;97m      \x1b[0m'
+        ]),
+        (TREE80, 3, 60, 15, False, [
+            '|~~~~~~~~~~~~~|~~~~~~~~~~~~~~|~~~~~~~~~~~~~~|▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒',
+            '|             |              |      a       |▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒',
+            '|             |              |      20      |▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒',
+            '|             |      vy      |______________|▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒',
+            '|             |      50      |      d       |▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒',
+            '|             |              |______11______|▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒',
+            '|     foo     |              |_____c 10_____|▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒',
+            '|      80     |              |_____b 9______|▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒',
+            '|             |______________|_____...______|▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒',
+            '|             |      dy      |      py      |▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒',
+            '|             |______11______|______11______|▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒',
+            '|             |      da      |▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒',
+            '|             |______10______|▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒',
+            '|             |      do      |      po      |▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒',
+            '|_____________|______9_______|______9_______|▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒'
+        ]),
+        (TREE80, 3, 60, 15, True, [
+            '\x1b[44;97m               \x1b[0m\x1b[41;97m               \x1b[0m\x1b[44;97m               \x1b[0m',
+            '\x1b[44;97m               \x1b[0m\x1b[41;97m               \x1b[0m\x1b[44;97m       a       \x1b[0m',
+            '\x1b[44;97m               \x1b[0m\x1b[41;97m               \x1b[0m\x1b[44;97m       20      \x1b[0m',
+            '\x1b[44;97m               \x1b[0m\x1b[41;97m       vy      \x1b[0m\x1b[44;97m               \x1b[0m',
+            '\x1b[44;97m               \x1b[0m\x1b[41;97m       50      \x1b[0m\x1b[45;30m       d       \x1b[0m',
+            '\x1b[44;97m               \x1b[0m\x1b[41;97m               \x1b[0m\x1b[45;30m       11      \x1b[0m',
+            '\x1b[44;97m      foo      \x1b[0m\x1b[41;97m               \x1b[0m\x1b[46;30m      c 10     \x1b[0m',
+            '\x1b[44;97m       80      \x1b[0m\x1b[41;97m               \x1b[0m\x1b[44;97m      b 9      \x1b[0m',
+            '\x1b[44;97m               \x1b[0m\x1b[41;97m               \x1b[0m\x1b[45;30m      ...      \x1b[0m',
+            '\x1b[44;97m               \x1b[0m\x1b[42;30m       dy      \x1b[0m\x1b[46;30m       py      \x1b[0m',
+            '\x1b[44;97m               \x1b[0m\x1b[42;30m       11      \x1b[0m\x1b[46;30m       11      \x1b[0m',
+            '\x1b[44;97m               \x1b[0m\x1b[43;30m       da      \x1b[0m',
+            '\x1b[44;97m               \x1b[0m\x1b[43;30m       10      \x1b[0m',
+            '\x1b[44;97m               \x1b[0m\x1b[41;97m       do      \x1b[0m\x1b[44;97m       po      \x1b[0m',
+            '\x1b[44;97m               \x1b[0m\x1b[41;97m       9       \x1b[0m\x1b[44;97m       9       \x1b[0m'
+        ]),
+    ]
+)
+def test_columns_renderer(tree, max_depth, width, height, color_mode, expected):
+    output = ColumnsRenderer(height=height, max_depth=max_depth, color_mode=color_mode).render(tree, width=width)
+    print("\n".join(output))
+    print(output)
+    assert output == expected
+
+
+@pytest.mark.parametrize(
     ["x", "expected"],
     [
         (0, '0'),
@@ -394,6 +454,19 @@ def test_path_split(path, expected):
 )
 def test_path_split_with_base(path, base, expected):
     assert expected == path_split(path, base)
+
+
+@pytest.mark.parametrize(
+    ["s", "maxlen", "truncation_indicator", "expected"],
+    [
+        ('Slartibartfast', 20, '...', 'Slartibartfast'),
+        ('Slartibartfast', 10, '...', 'Slartib...'),
+        ('Slartibartfast', 10, '[...]', 'Slart[...]'),
+        ('Slartibartfast', 2, '...', '..'),
+    ]
+)
+def test_truncate(s, maxlen, truncation_indicator, expected):
+    assert expected == truncate(s, maxlen, truncation_indicator)
 
 
 def _dedent(s: str) -> str:
