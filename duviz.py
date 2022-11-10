@@ -491,7 +491,7 @@ def get_progress_reporter(
     def progress(info: str):
         nonlocal next_time, interval
         if time() > next_time:
-            write(info.ljust(terminal_width)[:terminal_width] + '\r')
+            write(info.encode('ascii', errors='replace').ljust(terminal_width)[:terminal_width] + '\r')
             next_time = time() + interval
             # Converge to max interval.
             interval = 0.9 * interval + 0.1 * max_interval
@@ -593,7 +593,7 @@ def main():
             else:
                 renderer = AsciiDoubleLineBarRenderer(max_depth=opts.max_depth, size_formatter=size_formatter)
 
-        print("\n".join(renderer.render(tree, width=opts.display_width)))
+        print("\n".join(renderer.render(tree, width=opts.display_width)).encode('ascii', errors='replace').decode('ascii'))
 
 
 if __name__ == '__main__':
