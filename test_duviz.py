@@ -636,9 +636,9 @@ def test_get_progress_reporter():
     for i in range(200):
         progress('path-{i}'.format(i=i))
 
-    assert all(len(l.rstrip('\r')) <= 10 for l in output)
+    assert all(len(line.rstrip("\r")) <= 10 for line in output)
     # Extract "printed" path indexes
-    indexes = [int(l.partition('-')[-1]) for l in output]
+    indexes = [int(line.partition("-")[-1]) for line in output]
     assert indexes[0] == 0
     # Check time deltas: initial ones should be small, final ones large
     deltas = [i1-i0 for (i0, i1) in zip(indexes[:-1], indexes[1:])]

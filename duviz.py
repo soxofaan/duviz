@@ -129,8 +129,8 @@ class DuTree(SizeTree):
         with contextlib.closing(process.stdout):
             return cls.from_du_listing(
                 root=root,
-                du_listing=(l.decode('utf-8') for l in process.stdout),
-                progress_report=progress_report
+                du_listing=(line.decode("utf-8") for line in process.stdout),
+                progress_report=progress_report,
             )
 
     @classmethod
