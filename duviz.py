@@ -110,7 +110,7 @@ class DuTree(SizeTree):
         root: str,
         one_filesystem: bool = False,
         dereference: bool = False,
-        progress_report: Callable[[str], None] = None,
+        progress_report: Optional[Callable[[str], None]] = None,
     ) -> "DuTree":
         # Measure size in 1024 byte blocks. The GNU-du option -b enables counting
         # in bytes directly, but it is not available in BSD-du.
@@ -154,7 +154,7 @@ class InodeTree(SizeTree):
 
     @classmethod
     def from_ls(
-        cls, root: str, progress_report: Callable[[str], None] = None
+        cls, root: str, progress_report: Optional[Callable[[str], None]] = None
     ) -> "InodeTree":
         command = ["ls", "-aiR", root]
         try:
@@ -171,7 +171,10 @@ class InodeTree(SizeTree):
 
     @classmethod
     def from_ls_listing(
-        cls, root: str, ls_listing: str, progress_report: Callable[[str], None] = None
+        cls,
+        root: str,
+        ls_listing: str,
+        progress_report: Optional[Callable[[str], None]] = None,
     ) -> "InodeTree":
         def pairs(listing: str) -> Iterator[Tuple[List[str], int]]:
             all_inodes = set()
