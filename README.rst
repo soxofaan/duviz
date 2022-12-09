@@ -3,7 +3,7 @@
     :alt: unit tests
 .. image:: https://github.com/soxofaan/duviz/actions/workflows/pre-commit.yml/badge.svg?branch=master
     :target: https://github.com/soxofaan/duviz/actions/workflows/pre-commit.yml
-   :alt: pre-commit
+    :alt: pre-commit
 
 
 What is duviz?
