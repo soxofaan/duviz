@@ -1,6 +1,6 @@
 # From https://github.com/pre-commit/action
 
-name: pre-commit
+name: Pre-commit
 
 on:
   push:
