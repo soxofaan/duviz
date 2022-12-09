@@ -86,4 +86,3 @@ If you specify one or more directories, it will render the usage of those direct
 Instead of size in bytes, you can also get inode usage: just use the option ``--inodes`` (or ``-i`` in short).
 
 Run it with option ``--help`` for more options.
-
