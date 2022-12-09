@@ -4,6 +4,9 @@
 
 ## [Unreleased]
 
+
+## [3.1.2] - 2022-12-09
+
 - Add test runs for Python 3.10 and 3.11
 - Add more type hinting
 - Add `pipx` installation instructions
