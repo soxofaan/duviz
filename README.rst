@@ -1,3 +1,5 @@
+.. image:: https://img.shields.io/pypi/pyversions/duviz
+    :alt: PyPI - Python Version
 .. image:: https://github.com/soxofaan/duviz/actions/workflows/unittests.yml/badge.svg?branch=master
     :target: https://github.com/soxofaan/duviz/actions/workflows/unittests.yml
     :alt: unit tests
