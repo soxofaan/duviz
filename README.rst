@@ -60,7 +60,7 @@ Pip based
 
     which will install a ``duviz`` command line utility in your environment.
 
-    If you already have `pipx <https://pypa.github.io/pipx/>_` on your toolbelt,
+    If you already have `pipx <https://pypa.github.io/pipx/>`_ on your toolbelt,
     you might prefer to install duviz in an automatically managed,
     isolated environment with ``pipx install duviz``.
 
