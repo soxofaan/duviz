@@ -1,0 +1,25 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.2.0
+    hooks:
+    -   id: trailing-whitespace
+    -   id: end-of-file-fixer
+    -   id: check-yaml
+    -   id: check-added-large-files
+
+-   repo: https://github.com/PyCQA/flake8
+    rev: 4.0.1
+    hooks:
+    -   id: flake8
+        args: [--max-line-length=120]
+
+-   repo: https://github.com/akaihola/darker
+    rev: 1.5.1
+    hooks:
+    -   id: darker
+        additional_dependencies:
+            # Workaround for https://github.com/akaihola/darker/issues/403
+            # TODO: remove again when darker 1.6.0 is available
+            - black<22.12.0

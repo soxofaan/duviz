@@ -1,5 +1,13 @@
-.. image:: https://github.com/soxofaan/duviz/actions/workflows/lint-and-test.yml/badge.svg?branch=master
-    :target: https://github.com/soxofaan/duviz/actions/workflows/lint-and-test.yml
+.. image:: https://img.shields.io/pypi/pyversions/duviz
+    :target: https://pypi.org/project/duviz/
+    :alt: PyPI - Python Version
+.. image:: https://github.com/soxofaan/duviz/actions/workflows/unittests.yml/badge.svg?branch=master
+    :target: https://github.com/soxofaan/duviz/actions/workflows/unittests.yml
+    :alt: unit tests
+.. image:: https://github.com/soxofaan/duviz/actions/workflows/pre-commit.yml/badge.svg?branch=master
+    :target: https://github.com/soxofaan/duviz/actions/workflows/pre-commit.yml
+    :alt: pre-commit
+
 
 What is duviz?
 --------------
@@ -46,22 +54,26 @@ Features
 Installation
 ------------
 
-With Pip
-    ``duviz`` can be installed through ``pip`` (e.g. in a virtual env)::
+Pip based
+    duviz can be installed with pip in a desired virtual environment::
 
         pip install duviz
 
-    which will install the ``duviz`` utility to the corresponding ``bin`` folder.
+    which will install a ``duviz`` command line utility in your environment.
+
+    If you already have `pipx <https://pypa.github.io/pipx/>`_ on your toolbelt,
+    you might prefer to install duviz in an automatically managed,
+    isolated environment with ``pipx install duviz``.
 
 With Homebrew
-    ``duviz`` can also be installed with `Homebrew <https://brew.sh/>`_::
+    duviz can also be installed with `Homebrew <https://brew.sh/>`_::
 
         brew install https://raw.github.com/soxofaan/duviz/master/extra/homebrew/duviz.rb
 
 No installation
-    The file ``duviz.py`` is also intended to be usable as a standalone Python script,
+    The file ``duviz.py`` is also designed to be usable as a standalone Python script,
     without having to install it.
-    Download ``duviz.py`` to some location of your liking and run it::
+    Download ``duviz.py`` and just run it::
 
         python path/to/duviz.py
 
@@ -82,4 +94,3 @@ If you specify one or more directories, it will render the usage of those direct
 Instead of size in bytes, you can also get inode usage: just use the option ``--inodes`` (or ``-i`` in short).
 
 Run it with option ``--help`` for more options.
-
