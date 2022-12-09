@@ -4,14 +4,18 @@
 
 ## [Unreleased]
 
+- Replace `optparse` usage with `argparse`
+  ([#10](https://github.com/soxofaan/duviz/issues/10))
+
 
 ## [3.1.2] - 2022-12-09
 
 - Add test runs for Python 3.10 and 3.11
 - Add more type hinting
-- Add `pipx` installation instructions
+- Add `pipx` installation instructions ([#23](https://github.com/soxofaan/duviz/issues/23))
 - Start using `pre-commit` for automated code style issue detection and fixing
 - Start using `darker` for incrementally applying "black" code style
+  ([#21](https://github.com/soxofaan/duviz/issues/21))
 
 
 ## [3.1.1] - 2022-09-01

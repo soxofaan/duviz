@@ -9,6 +9,7 @@ License: MIT
 Website: http://soxofaan.github.io/duviz/
 """
 
+import argparse
 import contextlib
 import itertools
 import os
@@ -18,8 +19,7 @@ import subprocess
 import sys
 import time
 import unicodedata
-from typing import List, Optional, Dict, Iterable, Tuple, Callable, Iterator, Any
-
+from typing import Any, Callable, Dict, Iterable, Iterator, List, Optional, Tuple
 
 # TODO: catch absence/failure of du/ls subprocesses
 # TODO: how to handle unreadable subdirs in du/ls?
@@ -506,98 +506,125 @@ def main():
     terminal_width = shutil.get_terminal_size().columns
 
     # Handle commandline interface.
-    # TODO switch to argparse?
-    import optparse
-    cliparser = optparse.OptionParser(
-        """usage: %prog [options] [DIRS]
-        %prog gives a graphic representation of the disk space
-        usage of the folder trees under DIRS.""",
-        version="%prog 3.1.2",
+    cli = argparse.ArgumentParser(
+        prog="duviz", description="Render ASCII-art representation of disk space usage."
     )
-    cliparser.add_option(
-        '-w', '--width',
-        action='store', type='int', dest='display_width', default=terminal_width,
-        help='total width of all bars', metavar='WIDTH'
+    cli.add_argument("dir", nargs="*", help="directories to scan", default=["."])
+    cli.add_argument(
+        "-w",
+        "--width",
+        type=int,
+        dest="display_width",
+        default=terminal_width,
+        help="total width of all bars",
+        metavar="WIDTH",
     )
-    cliparser.add_option(
-        '-x', '--one-file-system',
-        action='store_true', dest='onefilesystem', default=False,
-        help='skip directories on different filesystems'
+    cli.add_argument(
+        "-x",
+        "--one-file-system",
+        action="store_true",
+        dest="one_file_system",
+        default=False,
+        help="skip directories on different filesystems",
     )
-    cliparser.add_option(
-        '-L', '--dereference',
-        action='store_true', dest='dereference', default=False,
-        help='dereference all symbolic links'
+    cli.add_argument(
+        "-L",
+        "--dereference",
+        action="store_true",
+        dest="dereference",
+        default=False,
+        help="dereference all symbolic links",
     )
-    cliparser.add_option(
-        '--max-depth',
-        action='store', type='int', dest='max_depth', default=5,
-        help='maximum recursion depth', metavar='N'
+    cli.add_argument(
+        "--max-depth",
+        action="store",
+        type=int,
+        dest="max_depth",
+        default=5,
+        help="maximum recursion depth",
+        metavar="N",
     )
-    cliparser.add_option(
-        '-i', '--inodes',
-        action='store_true', dest='inode_count', default=False,
-        help='count inodes instead of file size'
+    cli.add_argument(
+        "-i",
+        "--inodes",
+        action="store_true",
+        dest="inode_count",
+        default=False,
+        help="count inodes instead of file size",
     )
-    cliparser.add_option(
-        '--no-progress',
-        action='store_false', dest='show_progress', default=True,
-        help='disable progress reporting'
+    cli.add_argument(
+        "--no-progress",
+        action="store_false",
+        dest="show_progress",
+        default=True,
+        help="disable progress reporting",
     )
-    cliparser.add_option(
-        '-1', '--one-line',
-        action='store_true', dest='one_line', default=False,
-        help='Show one line bars instead of two line bars'
+    cli.add_argument(
+        "-1",
+        "--one-line",
+        action="store_true",
+        dest="one_line",
+        default=False,
+        help="Show one line bars instead of two line bars",
     )
-    cliparser.add_option(
-        '-c', '--color',
-        action='store_true', dest='color', default=False,
-        help='Use colors to render bars (instead of ASCII art)'
+    cli.add_argument(
+        "-c",
+        "--color",
+        action="store_true",
+        dest="color",
+        default=False,
+        help="Use colors to render bars (instead of ASCII art)",
     )
 
-    (opts, args) = cliparser.parse_args()
+    args = cli.parse_args()
 
     # Make sure we have a valid list of paths
-    if args:
-        paths = []
-        for path in args:
-            if os.path.exists(path):
-                paths.append(path)
-            else:
-                sys.stderr.write('Warning: not a valid path: "%s"\n' % path)
-    else:
-        # Do current dir if no dirs are given.
-        paths = ['.']
+    paths = []
+    for path in args.dir:
+        if os.path.exists(path):
+            paths.append(path)
+        else:
+            sys.stderr.write('Warning: not a valid path: "%s"\n' % path)
 
-    if opts.show_progress:
-        progress_report = get_progress_reporter(terminal_width=opts.display_width)
+    if args.show_progress:
+        progress_report = get_progress_reporter(terminal_width=args.display_width)
     else:
         progress_report = None
 
     for directory in paths:
-        if opts.inode_count:
+        if args.inode_count:
             tree = InodeTree.from_ls(root=directory, progress_report=progress_report)
             size_formatter = SIZE_FORMATTER_COUNT
         else:
             tree = DuTree.from_du(
                 root=directory,
-                one_filesystem=opts.onefilesystem, dereference=opts.dereference,
+                one_filesystem=args.one_file_system,
+                dereference=args.dereference,
                 progress_report=progress_report,
             )
             size_formatter = SIZE_FORMATTER_BYTES
 
-        if opts.one_line:
-            if opts.color:
-                renderer = ColorSingleLineBarRenderer(max_depth=opts.max_depth, size_formatter=size_formatter)
+        max_depth = args.max_depth
+        if args.one_line:
+            if args.color:
+                renderer = ColorSingleLineBarRenderer(
+                    max_depth=max_depth, size_formatter=size_formatter
+                )
             else:
-                renderer = AsciiSingleLineBarRenderer(max_depth=opts.max_depth, size_formatter=size_formatter)
+                renderer = AsciiSingleLineBarRenderer(
+                    max_depth=max_depth, size_formatter=size_formatter
+                )
         else:
-            if opts.color:
-                renderer = ColorDoubleLineBarRenderer(max_depth=opts.max_depth, size_formatter=size_formatter)
+            if args.color:
+                renderer = ColorDoubleLineBarRenderer(
+                    max_depth=max_depth, size_formatter=size_formatter
+                )
             else:
-                renderer = AsciiDoubleLineBarRenderer(max_depth=opts.max_depth, size_formatter=size_formatter)
+                renderer = AsciiDoubleLineBarRenderer(
+                    max_depth=max_depth, size_formatter=size_formatter
+                )
 
-        print("\n".join(renderer.render(tree, width=opts.display_width)))
+        print("\n".join(renderer.render(tree, width=args.display_width)))
 
 
 if __name__ == '__main__':
