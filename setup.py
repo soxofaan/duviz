@@ -9,9 +9,9 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='duviz',
-    version='3.1.1',
-    description='Command line disk space visualization tool',
+    name="duviz",
+    version="3.1.2",
+    description="Command line disk space visualization tool",
     long_description=long_description,
     url='https://github.com/soxofaan/duviz',
     author='Stefaan Lippens',
