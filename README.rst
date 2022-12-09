@@ -1,5 +1,5 @@
-.. image:: https://github.com/soxofaan/duviz/actions/workflows/lint-and-test.yml/badge.svg?branch=master
-    :target: https://github.com/soxofaan/duviz/actions/workflows/lint-and-test.yml
+.. image:: https://github.com/soxofaan/duviz/actions/workflows/unittests.yml/badge.svg?branch=master
+    :target: https://github.com/soxofaan/duviz/actions/workflows/unittests.yml
 
 What is duviz?
 --------------
