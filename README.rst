@@ -49,7 +49,7 @@ Features
 - Detects your terminal width for maximum visualization pleasure.
 - Not only supports "disk usage" based on file size,
   but also allows to count files (inode count mode)
-  or give a size breakdown of ZIP files.
+  or give a size breakdown of ZIP or tar files.
 - Option to use terminal colors for the boxes instead of ASCII art
 
 
@@ -95,8 +95,10 @@ If you specify one or more directories, it will render the usage of those direct
 
 Instead of size in bytes, you can also get inode usage: just use the option ``--inodes`` (or ``-i`` in short).
 
-If you directly pass ``duviz`` a ZIP file, it will visualize the size breakdown of the file tree in the ZIP file.
-By default, the compresses size will be visualized,
-but decompressed size can be shown with option ``--decompressed``.
+If you directly pass ``duviz`` a ZIP or tar file,
+it will visualize the size breakdown of the file tree in the ZIP/tar file.
+In case of ZIP files, the compressed size will be shown by default
+(option ``--unzip-size`` will toggle showing of decompressed size).
+For tar files, only the decompressed size is available.
 
 Run it with option ``--help`` for more options.

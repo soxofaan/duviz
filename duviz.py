@@ -629,10 +629,9 @@ def main():
         help="Force ZIP-file handling of given paths (e.g. lacking a traditional `.zip` extension).",
     )
     cli.add_argument(
-        # TODO short option, "-d"?
-        "--decompressed",
+        "--unzip-size",
         action="store_true",
-        help="Use decompressed file size instead of compressed file size when processing an archive file (e.g. ZIP)",
+        help="Visualize decompressed file size instead of compressed file size for ZIP files.",
     )
     cli.add_argument(
         # TODO short option?
@@ -664,7 +663,7 @@ def main():
         if args.zip or (
             os.path.isfile(path) and os.path.splitext(path)[1].lower() == ".zip"
         ):
-            tree = ZipFileProcessor.from_zipfile(path, compressed=not args.decompressed)
+            tree = ZipFileProcessor.from_zipfile(path, compressed=not args.unzip_size)
             size_formatter = SIZE_FORMATTER_BYTES
         elif args.tar or (
             os.path.isfile(path)
