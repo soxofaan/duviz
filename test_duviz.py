@@ -1,7 +1,12 @@
 # coding: utf-8
+
+# TODO: test actual CLI
+
 import itertools
+import tarfile
 import textwrap
 import zipfile
+from pathlib import Path
 from typing import List
 
 import pytest
@@ -22,6 +27,7 @@ from duviz import (
     ColorSingleLineBarRenderer,
     Colorizer,
     ZipFileProcessor,
+    TarFileProcessor,
 )
 
 
@@ -696,6 +702,46 @@ class TestZipFileProcessor:
         expected = [
             "________________________________________",
             TreeRenderer.bar(label=str(zip_file), width=40),
+            "[________________7.40KB________________]",
+            "[         alpha         ][    0.txt    ]",
+            "[_________4.80KB________][____2.60KB___]",
+            "[ abc100.txt][abbcccdddd]               ",
+            "[___2.60KB__][__2.20KB__]               ",
+        ]
+        assert result == expected
+
+
+def _create_file(path: Path, content: str) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as f:
+        f.write(content)
+    return path
+
+
+class TestTarFileProcessor:
+    @pytest.fixture(params=[("w:", ".tar"), ("w:gz", ".tar.gz"), ("w:bz2", ".tar.bz2")])
+    def tar_file(self, request, tmp_path):
+        mode, ext = request.param
+        path = tmp_path / f"data{ext}"
+        with tarfile.open(path, mode) as tf:
+
+            def create(rel_path: str, content: str):
+                tf.add(
+                    name=_create_file(tmp_path / rel_path, content), arcname=rel_path
+                )
+
+            create("alpha/abc100.txt", "abcdefghijklmnopqrstuvwxyz" * 100)
+            create("alpha/abbcccdddde.txt", "abbcccdddde" * 2 * 100)
+            create("0.txt", "0" * 26 * 100)
+        return path
+
+    def test_default(self, tar_file):
+        tree = TarFileProcessor.from_tar_file(tar_file)
+        renderer = AsciiDoubleLineBarRenderer(size_formatter=SIZE_FORMATTER_BYTES)
+        result = renderer.render(tree, width=40)
+        expected = [
+            "________________________________________",
+            TreeRenderer.bar(label=str(tar_file), width=40),
             "[________________7.40KB________________]",
             "[         alpha         ][    0.txt    ]",
             "[_________4.80KB________][____2.60KB___]",

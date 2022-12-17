@@ -17,9 +17,10 @@ import re
 import shutil
 import subprocess
 import sys
+import tarfile
 import time
 import unicodedata
-from typing import Any, Callable, Dict, Iterable, Iterator, List, Optional, Tuple
+from typing import Any, Callable, Dict, Iterable, Iterator, List, Optional, Tuple, Union
 import zipfile
 from pathlib import Path
 
@@ -229,12 +230,10 @@ class InodeTree(SizeTree):
 
 
 class ZipFileProcessor:
-    """Build `SizeTree` from a ZIP file."""
-
-    # TODO: tar.gz/... file support too
+    """Build `SizeTree` from a file tree in a ZIP archive file."""
 
     @staticmethod
-    def from_zipfile(path: Path, compressed: bool = True) -> SizeTree:
+    def from_zipfile(path: Union[str, Path], compressed: bool = True) -> SizeTree:
         # TODO: handle zipfile.BadZipFile in nicer way?
         with zipfile.ZipFile(path, mode="r") as zf:
             if compressed:
@@ -243,6 +242,18 @@ class ZipFileProcessor:
                 )
             else:
                 pairs = ((path_split(z.filename), z.file_size) for z in zf.infolist())
+            return SizeTree.from_path_size_pairs(
+                pairs=pairs, root=str(path), _recalculate_sizes=True
+            )
+
+
+class TarFileProcessor:
+    """Build `SizeTree` from file tree in a tar archive file."""
+
+    @staticmethod
+    def from_tar_file(path: Union[str, Path]) -> SizeTree:
+        with tarfile.open(path, mode="r") as tf:
+            pairs = ((path_split(m.name), m.size) for m in tf.getmembers())
             return SizeTree.from_path_size_pairs(
                 pairs=pairs, root=str(path), _recalculate_sizes=True
             )
@@ -623,11 +634,21 @@ def main():
         action="store_true",
         help="Use decompressed file size instead of compressed file size when processing an archive file (e.g. ZIP)",
     )
+    cli.add_argument(
+        # TODO short option?
+        "--tar",
+        action="store_true",
+        dest="tar",
+        help="""
+            Force tar-file handling of given paths
+            (e.g. lacking a traditional extension like `.tar`, `.tar.gz`, ...).
+        """,
+    )
 
     args = cli.parse_args()
 
     # Make sure we have a valid list of paths
-    paths = []
+    paths: List[str] = []
     for path in args.dir:
         if os.path.exists(path):
             paths.append(path)
@@ -644,6 +665,14 @@ def main():
             os.path.isfile(path) and os.path.splitext(path)[1].lower() == ".zip"
         ):
             tree = ZipFileProcessor.from_zipfile(path, compressed=not args.decompressed)
+            size_formatter = SIZE_FORMATTER_BYTES
+        elif args.tar or (
+            os.path.isfile(path)
+            and any(
+                path.endswith(ext) for ext in {".tar", ".tar.gz", ".tgz", "tar.bz2"}
+            )
+        ):
+            tree = TarFileProcessor().from_tar_file(path)
             size_formatter = SIZE_FORMATTER_BYTES
         elif args.inode_count:
             tree = InodeTree.from_ls(root=path, progress_report=progress_report)
