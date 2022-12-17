@@ -20,10 +20,14 @@ import sys
 import time
 import unicodedata
 from typing import Any, Callable, Dict, Iterable, Iterator, List, Optional, Tuple
+import zipfile
+from pathlib import Path
+
 
 # TODO: catch absence/failure of du/ls subprocesses
 # TODO: how to handle unreadable subdirs in du/ls?
 # TODO: option to sort alphabetically (instead of on size)
+# TODO: use pathlib.Path instead of naive strings where appropriate
 
 
 def path_split(path: str, base: str = "") -> List[str]:
@@ -109,6 +113,8 @@ class DuTree(SizeTree):
     Size tree from `du` (disk usage) listings
     """
 
+    # TODO no need for subclassing from SizeTree
+
     _du_regex = re.compile(r'([0-9]*)\s*(.*)')
 
     @classmethod
@@ -158,6 +164,7 @@ class DuTree(SizeTree):
 
 
 class InodeTree(SizeTree):
+    # TODO no need for subclassing from SizeTree
 
     @classmethod
     def from_ls(
@@ -221,6 +228,26 @@ class InodeTree(SizeTree):
         return tree
 
 
+class ZipFileProcessor:
+    """Build `SizeTree` from a ZIP file."""
+
+    # TODO: tar.gz/... file support too
+
+    @staticmethod
+    def from_zipfile(path: Path, compressed: bool = True) -> SizeTree:
+        # TODO: handle zipfile.BadZipFile in nicer way?
+        with zipfile.ZipFile(path, mode="r") as zf:
+            if compressed:
+                pairs = (
+                    (path_split(z.filename), z.compress_size) for z in zf.infolist()
+                )
+            else:
+                pairs = ((path_split(z.filename), z.file_size) for z in zf.infolist())
+            return SizeTree.from_path_size_pairs(
+                pairs=pairs, root=str(path), _recalculate_sizes=True
+            )
+
+
 class SizeFormatter:
     """Render a (byte) count in compact human-readable way: 12, 34k, 56M, ..."""
 
@@ -253,8 +280,8 @@ class TreeRenderer:
     def render(self, tree: SizeTree, width: int) -> List[str]:
         raise NotImplementedError
 
+    @staticmethod
     def bar(
-        self,
         label: str,
         width: int,
         fill: str = "-",
@@ -583,6 +610,19 @@ def main():
         default=False,
         help="Use colors to render bars (instead of ASCII art)",
     )
+    cli.add_argument(
+        # TODO short option, "-z"?
+        "--zip",
+        action="store_true",
+        dest="zip",
+        help="Force ZIP-file handling of given paths (e.g. lacking a traditional `.zip` extension).",
+    )
+    cli.add_argument(
+        # TODO short option, "-d"?
+        "--decompressed",
+        action="store_true",
+        help="Use decompressed file size instead of compressed file size when processing an archive file (e.g. ZIP)",
+    )
 
     args = cli.parse_args()
 
@@ -599,13 +639,18 @@ def main():
     else:
         progress_report = None
 
-    for directory in paths:
-        if args.inode_count:
-            tree = InodeTree.from_ls(root=directory, progress_report=progress_report)
+    for path in paths:
+        if args.zip or (
+            os.path.isfile(path) and os.path.splitext(path)[1].lower() == ".zip"
+        ):
+            tree = ZipFileProcessor.from_zipfile(path, compressed=not args.decompressed)
+            size_formatter = SIZE_FORMATTER_BYTES
+        elif args.inode_count:
+            tree = InodeTree.from_ls(root=path, progress_report=progress_report)
             size_formatter = SIZE_FORMATTER_COUNT
         else:
             tree = DuTree.from_du(
-                root=directory,
+                root=path,
                 one_filesystem=args.one_file_system,
                 dereference=args.dereference,
                 progress_report=progress_report,

@@ -7,6 +7,7 @@
 - Replace `optparse` usage with `argparse`
   ([#10](https://github.com/soxofaan/duviz/issues/10))
 - Drop Python 3.5 support ([#27](https://github.com/soxofaan/duviz/issues/27))
+- New feature: size breakdown of ZIP files ([#20](https://github.com/soxofaan/duviz/issues/20))
 
 
 ## [3.1.2] - 2022-12-09

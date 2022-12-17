@@ -47,7 +47,9 @@ Features
   The hard work is done by ``du`` (or ``ls``), which run an C-speed.
 - Progress reporting while you wait. Be hypnotized!
 - Detects your terminal width for maximum visualization pleasure.
-- Apart from file size (the default), you can also just count files (inodes)
+- Not only supports "disk usage" based on file size,
+  but also allows to count files (inode count mode)
+  or give a size breakdown of ZIP files.
 - Option to use terminal colors for the boxes instead of ASCII art
 
 
@@ -92,5 +94,9 @@ If you run ``duviz`` without arguments, it will render the disk usage of the cur
 If you specify one or more directories, it will render the usage of those directories, how intuitive is that!
 
 Instead of size in bytes, you can also get inode usage: just use the option ``--inodes`` (or ``-i`` in short).
+
+If you directly pass ``duviz`` a ZIP file, it will visualize the size breakdown of the file tree in the ZIP file.
+By default, the compresses size will be visualized,
+but decompressed size can be shown with option ``--decompressed``.
 
 Run it with option ``--help`` for more options.
