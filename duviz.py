@@ -555,7 +555,13 @@ def main():
     cli = argparse.ArgumentParser(
         prog="duviz", description="Render ASCII-art representation of disk space usage."
     )
-    cli.add_argument("dir", nargs="*", help="directories to scan", default=["."])
+    cli.add_argument(
+        "paths",
+        metavar="PATH",
+        nargs="*",
+        help="Directories or ZIP/tar archives to scan",
+        default=["."],
+    )
     cli.add_argument(
         "-w",
         "--width",
@@ -648,7 +654,7 @@ def main():
 
     # Make sure we have a valid list of paths
     paths: List[str] = []
-    for path in args.dir:
+    for path in args.paths:
         if os.path.exists(path):
             paths.append(path)
         else:
