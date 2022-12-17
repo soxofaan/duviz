@@ -69,7 +69,10 @@ class SizeTree:
 
     @classmethod
     def from_path_size_pairs(
-        cls, pairs: Iterable[Tuple[List[str], int]], root: str = "/"
+        cls,
+        pairs: Iterable[Tuple[List[str], int]],
+        root: str = "/",
+        _recalculate_sizes: bool = False,
     ) -> "SizeTree":
         """
         Build SizeTree from given (path, size) pairs
@@ -83,6 +86,10 @@ class SizeTree:
                     cursor.children[component] = cls(name=component)
                 cursor = cursor.children[component]
             cursor.size = size
+
+        if _recalculate_sizes:
+            # TODO: automatically detect need to recalculate sizes
+            tree._recalculate_own_sizes_to_total_sizes()
         return tree
 
     def __lt__(self, other: "SizeTree") -> bool:
@@ -208,8 +215,9 @@ class InodeTree(SizeTree):
                     progress_report(path)
                 yield path_split(path, root)[1:], count
 
-        tree = cls.from_path_size_pairs(pairs=pairs(ls_listing), root=root)
-        tree._recalculate_own_sizes_to_total_sizes()
+        tree = cls.from_path_size_pairs(
+            pairs=pairs(ls_listing), root=root, _recalculate_sizes=True
+        )
         return tree
 
 
