@@ -19,8 +19,8 @@ from duviz import (
     path_split,
     SizeTree,
     AsciiDoubleLineBarRenderer,
-    DuTree,
-    InodeTree,
+    DuProcessor,
+    InodeProcessor,
     get_progress_reporter,
     AsciiSingleLineBarRenderer,
     ColorDoubleLineBarRenderer,
@@ -463,7 +463,7 @@ def test_build_du_tree1():
         2       path/to/s p a c e s
         800     path/to
     ''')
-    tree = DuTree.from_du_listing(directory, du_listing)
+    tree = DuProcessor.from_du_listing(directory, du_listing)
     renderer = AsciiDoubleLineBarRenderer(size_formatter=SIZE_FORMATTER_BYTES)
     result = renderer.render(tree, width=40)
     expected = _dedent_and_split('''
@@ -486,7 +486,7 @@ def test_build_du_tree2():
         2       path/to/C
         4       path/to
     ''')
-    tree = DuTree.from_du_listing(directory, du_listing)
+    tree = DuProcessor.from_du_listing(directory, du_listing)
     renderer = AsciiDoubleLineBarRenderer(size_formatter=SIZE_FORMATTER_BYTES)
     result = renderer.render(tree, width=40)
     expected = _dedent_and_split('''
@@ -501,7 +501,9 @@ def test_build_du_tree2():
 
 def _check_ls_listing_render(ls_listing: str, expected: str, directory='path/to', width=40):
     """Helper to parse a ls listing, render as ASCII bars and check result"""
-    tree = InodeTree.from_ls_listing(root=directory, ls_listing=_dedent(ls_listing))
+    tree = InodeProcessor.from_ls_listing(
+        root=directory, ls_listing=_dedent(ls_listing)
+    )
     result = AsciiDoubleLineBarRenderer().render(tree, width=width)
     assert result == _dedent_and_split(expected)
 

@@ -109,12 +109,10 @@ class SizeTree:
         return self.size
 
 
-class DuTree(SizeTree):
+class DuProcessor:
     """
     Size tree from `du` (disk usage) listings
     """
-
-    # TODO no need for subclassing from SizeTree
 
     _du_regex = re.compile(r'([0-9]*)\s*(.*)')
 
@@ -125,7 +123,7 @@ class DuTree(SizeTree):
         one_filesystem: bool = False,
         dereference: bool = False,
         progress_report: Optional[Callable[[str], None]] = None,
-    ) -> "DuTree":
+    ) -> SizeTree:
         # Measure size in 1024 byte blocks. The GNU-du option -b enables counting
         # in bytes directly, but it is not available in BSD-du.
         command = ['du', '-k']
@@ -153,7 +151,7 @@ class DuTree(SizeTree):
         root: str,
         du_listing: Iterable[str],
         progress_report: Optional[Callable[[str], None]] = None,
-    ) -> "DuTree":
+    ) -> SizeTree:
         def pairs(lines: Iterable[str]) -> Iterator[Tuple[List[str], int]]:
             for line in lines:
                 kb, path = cls._du_regex.match(line).group(1, 2)
@@ -161,16 +159,15 @@ class DuTree(SizeTree):
                     progress_report(path)
                 yield path_split(path, root)[1:], 1024 * int(kb)
 
-        return cls.from_path_size_pairs(root=root, pairs=pairs(du_listing))
+        return SizeTree.from_path_size_pairs(root=root, pairs=pairs(du_listing))
 
 
-class InodeTree(SizeTree):
-    # TODO no need for subclassing from SizeTree
+class InodeProcessor:
 
     @classmethod
     def from_ls(
         cls, root: str, progress_report: Optional[Callable[[str], None]] = None
-    ) -> "InodeTree":
+    ) -> SizeTree:
         command = ["ls", "-aiR", root]
         try:
             process = subprocess.Popen(command, stdout=subprocess.PIPE)
@@ -190,7 +187,7 @@ class InodeTree(SizeTree):
         root: str,
         ls_listing: str,
         progress_report: Optional[Callable[[str], None]] = None,
-    ) -> "InodeTree":
+    ) -> SizeTree:
         def pairs(listing: str) -> Iterator[Tuple[List[str], int]]:
             all_inodes = set()
 
@@ -223,7 +220,7 @@ class InodeTree(SizeTree):
                     progress_report(path)
                 yield path_split(path, root)[1:], count
 
-        tree = cls.from_path_size_pairs(
+        tree = SizeTree.from_path_size_pairs(
             pairs=pairs(ls_listing), root=root, _recalculate_sizes=True
         )
         return tree
@@ -680,10 +677,10 @@ def main():
             tree = TarFileProcessor().from_tar_file(path)
             size_formatter = SIZE_FORMATTER_BYTES
         elif args.inode_count:
-            tree = InodeTree.from_ls(root=path, progress_report=progress_report)
+            tree = InodeProcessor.from_ls(root=path, progress_report=progress_report)
             size_formatter = SIZE_FORMATTER_COUNT
         else:
-            tree = DuTree.from_du(
+            tree = DuProcessor.from_du(
                 root=path,
                 one_filesystem=args.one_file_system,
                 dereference=args.dereference,
