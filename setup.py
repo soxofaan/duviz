@@ -10,7 +10,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name="duviz",
-    version="3.1.2",
+    version="3.2.0",
     description="Command line disk space visualization tool",
     long_description=long_description,
     url="https://github.com/soxofaan/duviz",

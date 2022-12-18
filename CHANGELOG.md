@@ -4,6 +4,9 @@
 
 ## [Unreleased]
 
+
+## [3.2.0] - 2022-12-18
+
 - Replace `optparse` usage with `argparse`
   ([#10](https://github.com/soxofaan/duviz/issues/10))
 - Drop Python 3.5 support ([#27](https://github.com/soxofaan/duviz/issues/27))
