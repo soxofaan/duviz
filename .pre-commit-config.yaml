@@ -16,10 +16,6 @@ repos:
         args: [--max-line-length=120]
 
 -   repo: https://github.com/akaihola/darker
-    rev: 1.5.1
+    rev: 1.6.0
     hooks:
     -   id: darker
-        additional_dependencies:
-            # Workaround for https://github.com/akaihola/darker/issues/403
-            # TODO: remove again when darker 1.6.0 is available
-            - black<22.12.0
