@@ -4,9 +4,9 @@
 Command line tool for visualization of the disk space usage of a directory
 and its subdirectories.
 
-Copyright: 2009-2019 Stefaan Lippens
+Copyright: 2009-2023 Stefaan Lippens
 License: MIT
-Website: http://soxofaan.github.io/duviz/
+Website: https://github.com/soxofaan/duviz
 """
 
 import argparse
