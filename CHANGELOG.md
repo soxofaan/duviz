@@ -4,7 +4,9 @@
 
 ## [Unreleased]
 
-- Migrate to `pyproject.toml` based package metadata and information.
+- Migrate to `pyproject.toml` based project metadata
+  and `hatchling` based packing
+  ([#15](https://github.com/soxofaan/duviz/issues/15))
 
 
 ## [3.2.0] - 2022-12-18
