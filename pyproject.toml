@@ -1,6 +1,6 @@
 [project]
 name = "duviz"
-version = "3.1.2"
+dynamic = ["version"]
 authors = [
     { name = "Stefaan Lippens", email = "soxofaan@gmail.com" },
 ]
@@ -31,6 +31,9 @@ duviz = "duviz:main"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.version]
+source = "regex"
+path = "duviz.py"
 
 [tool.hatch.build]
 include = [
