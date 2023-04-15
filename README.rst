@@ -1,10 +1,10 @@
 .. image:: https://img.shields.io/pypi/pyversions/duviz
     :target: https://pypi.org/project/duviz/
     :alt: PyPI - Python Version
-.. image:: https://github.com/soxofaan/duviz/actions/workflows/unittests.yml/badge.svg?branch=master
+.. image:: https://github.com/soxofaan/duviz/actions/workflows/unittests.yml/badge.svg?branch=main
     :target: https://github.com/soxofaan/duviz/actions/workflows/unittests.yml
     :alt: unit tests
-.. image:: https://github.com/soxofaan/duviz/actions/workflows/pre-commit.yml/badge.svg?branch=master
+.. image:: https://github.com/soxofaan/duviz/actions/workflows/pre-commit.yml/badge.svg?branch=main
     :target: https://github.com/soxofaan/duviz/actions/workflows/pre-commit.yml
     :alt: pre-commit
 
@@ -70,7 +70,7 @@ Pip based
 With Homebrew
     duviz can also be installed with `Homebrew <https://brew.sh/>`_::
 
-        brew install https://raw.github.com/soxofaan/duviz/master/extra/homebrew/duviz.rb
+        brew install https://raw.github.com/soxofaan/duviz/main/extra/homebrew/duviz.rb
 
 No installation
     The file ``duviz.py`` is also designed to be usable as a standalone Python script,
