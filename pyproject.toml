@@ -1,12 +1,12 @@
 [project]
 name = "duviz"
-dynamic = ["version"]
+description = "Command line disk space visualization tool"
+readme = "README.rst"
+license = "MIT"
 authors = [
     { name = "Stefaan Lippens", email = "soxofaan@gmail.com" },
 ]
-description = "Command line disk space visualization tool"
-readme = "README.rst"
-license = { file = "LICENSE.txt" }
+dynamic = ["version"]
 requires-python = ">=3.5"
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -17,11 +17,17 @@ classifiers = [
     "Intended Audience :: System Administrators",
     "Topic :: System :: Systems Administration",
 ]
-keywords = ["disk usage", "visualization", "asciiart"]
+keywords = [
+    "disk usage",
+    "visualization",
+    "asciiart",
+    "cli",
+]
 
 [project.urls]
-"Homepage" = "https://github.com/soxofaan/duviz"
-"Bug Tracker" = "https://github.com/soxofaan/duviz/issues"
+Homepage = "https://github.com/soxofaan/duviz"
+Source = "https://github.com/soxofaan/duviz"
+Tracker = "https://github.com/soxofaan/duviz/issues"
 
 [project.scripts]
 duviz = "duviz:main"
@@ -39,3 +45,7 @@ path = "duviz.py"
 include = [
     "duviz.py",
 ]
+
+
+[tool.black]
+line-length = 120

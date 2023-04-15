@@ -5,7 +5,7 @@
 ## [Unreleased]
 
 - Migrate to `pyproject.toml` based project metadata
-  and `hatchling` based packing
+  and `hatchling` based packaging
   ([#15](https://github.com/soxofaan/duviz/issues/15))
 
 
