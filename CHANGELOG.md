@@ -7,6 +7,8 @@
 - Migrate to `pyproject.toml` based project metadata
   and `hatchling` based packaging
   ([#15](https://github.com/soxofaan/duviz/issues/15))
+- Bring back CLI option `--version` to show current version.
+  ([#29](https://github.com/soxofaan/duviz/issues/29))
 
 
 ## [3.2.0] - 2022-12-18

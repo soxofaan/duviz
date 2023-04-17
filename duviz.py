@@ -553,8 +553,10 @@ def main():
 
     # Handle commandline interface.
     cli = argparse.ArgumentParser(
-        prog="duviz", description="Render ASCII-art representation of disk space usage."
+        prog="duviz",
+        description="Render ASCII-art representation of disk space usage.",
     )
+    cli.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     cli.add_argument(
         "paths",
         metavar="PATH",
