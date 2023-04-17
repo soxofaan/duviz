@@ -68,9 +68,10 @@ Pip based
     isolated environment with ``pipx install duviz``.
 
 With Homebrew
-    duviz can also be installed with `Homebrew <https://brew.sh/>`_::
+    duviz can also be installed with `Homebrew <https://brew.sh/>`_
+    through the `soxofaan/duviz <https://github.com/soxofaan/homebrew-duviz>`_ tap::
 
-        brew install https://raw.github.com/soxofaan/duviz/main/extra/homebrew/duviz.rb
+        brew install soxofaan/duviz/duviz
 
 No installation
     The file ``duviz.py`` is also designed to be usable as a standalone Python script,
