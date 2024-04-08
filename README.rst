@@ -1,10 +1,12 @@
-.. image:: https://img.shields.io/pypi/pyversions/duviz
+|badge_pypi| |badge_tests| |badge_precommit|
+
+.. |badge_pypi| image:: https://img.shields.io/pypi/pyversions/duviz
     :target: https://pypi.org/project/duviz/
     :alt: PyPI - Python Version
-.. image:: https://github.com/soxofaan/duviz/actions/workflows/unittests.yml/badge.svg?branch=main
+.. |badge_tests| image:: https://github.com/soxofaan/duviz/actions/workflows/unittests.yml/badge.svg?branch=main
     :target: https://github.com/soxofaan/duviz/actions/workflows/unittests.yml
     :alt: unit tests
-.. image:: https://github.com/soxofaan/duviz/actions/workflows/pre-commit.yml/badge.svg?branch=main
+.. |badge_precommit| image:: https://github.com/soxofaan/duviz/actions/workflows/pre-commit.yml/badge.svg?branch=main
     :target: https://github.com/soxofaan/duviz/actions/workflows/pre-commit.yml
     :alt: pre-commit
 
