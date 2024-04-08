@@ -1,4 +1,4 @@
-|badge_pypi| |badge_tests| |badge_precommit|
+|badge_pypi| |badge_tests| |badge_precommit| |badge_since|
 
 .. |badge_pypi| image:: https://img.shields.io/pypi/pyversions/duviz
     :target: https://pypi.org/project/duviz/
@@ -9,6 +9,8 @@
 .. |badge_precommit| image:: https://github.com/soxofaan/duviz/actions/workflows/pre-commit.yml/badge.svg?branch=main
     :target: https://github.com/soxofaan/duviz/actions/workflows/pre-commit.yml
     :alt: pre-commit
+.. |badge_since| image:: https://img.shields.io/badge/since-2009-blue
+    :alt: since 2009
 
 
 What is duviz?
