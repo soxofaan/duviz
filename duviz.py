@@ -117,7 +117,7 @@ class DuProcessor:
     Size tree from `du` (disk usage) listings
     """
 
-    _du_regex = re.compile(r'([0-9]*)\s*(.*)')
+    _du_regex = re.compile(r"([0-9]+)\s*(.+)")
 
     @classmethod
     def from_du(
@@ -157,10 +157,13 @@ class DuProcessor:
     ) -> SizeTree:
         def pairs(lines: Iterable[str]) -> Iterator[Tuple[List[str], int]]:
             for line in lines:
-                kb, path = cls._du_regex.match(line).group(1, 2)
-                if progress_report:
-                    progress_report(path)
-                yield path_split(path, root)[1:], 1024 * int(kb)
+                try:
+                    kb, path = cls._du_regex.match(line).group(1, 2)
+                    if progress_report:
+                        progress_report(path)
+                    yield path_split(path, root)[1:], 1024 * int(kb)
+                except Exception as e:
+                    raise ValueError(f"Failed to parse {line!r}") from e
 
         return SizeTree.from_path_size_pairs(root=root, pairs=pairs(du_listing))
 
