@@ -14,7 +14,6 @@ from __future__ import annotations
 import argparse
 import contextlib
 import itertools
-import os
 import re
 import shutil
 import subprocess
@@ -37,25 +36,19 @@ __version__ = "3.2.0"
 
 def path_split(path: str, base: str = "") -> list[str]:
     """
-    Split a file system path in a list of path components (as a recursive os.path.split()),
+    Split a file system path in a list of path components,
     optionally only up to a given base path.
     """
-    if base.endswith(os.path.sep):
-        base = base.rstrip(os.path.sep)
-    items = []
-    while True:
-        if path == base:
-            items.insert(0, path)
-            break
-        path, tail = os.path.split(path)
-        if tail != "":
-            items.insert(0, tail)
-        if path == "":
-            break
-        if path == "/":
-            items.insert(0, path)
-            break
-    return items
+    p = Path(path)
+    if base:
+        b = Path(base)
+        try:
+            # TODO (when on at least Python 3.9):
+            #     replace ValueError workaround with cleaner `is_relative_to` guard
+            return [str(b)] + list(p.relative_to(b).parts)
+        except ValueError:
+            pass  # path is not relative to base
+    return list(p.parts)
 
 
 class SubprocessException(RuntimeError):
@@ -702,7 +695,7 @@ def main():
     # Make sure we have a valid list of paths
     paths: list[str] = []
     for path in args.paths:
-        if os.path.exists(path):
+        if Path(path).exists():
             paths.append(path)
         else:
             sys.stderr.write('Warning: not a valid path: {path!r}"\n')
@@ -713,13 +706,11 @@ def main():
         progress_report = None
 
     for path in paths:
-        if args.zip or (
-            os.path.isfile(path) and os.path.splitext(path)[1].lower() == ".zip"
-        ):
+        if args.zip or (Path(path).is_file() and Path(path).suffix.lower() == ".zip"):
             tree = ZipFileProcessor.from_zipfile(path, compressed=not args.unzip_size)
             size_formatter = SIZE_FORMATTER_BYTES
         elif args.tar or (
-            os.path.isfile(path)
+            Path(path).is_file()
             and any(
                 path.endswith(ext) for ext in (".tar", ".tar.gz", ".tgz", "tar.bz2")
             )
