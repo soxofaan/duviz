@@ -17,15 +17,14 @@ jobs:
         # Basic configurations to run on
         os: ["ubuntu-latest"]
         python-version:
-          - "3.7"
           - "3.8"
           - "3.9"
           - "3.10"
           - "3.11"
-        # Additional special cases (see https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#example-adding-configurations)
-        include:
-          - os: "ubuntu-20.04"
-            python-version: "3.6"
+          - "3.12"
+          - "3.13"
+          - "3.14"
+          - "3.15"
 
     runs-on: ${{ matrix.os }}
     steps:
