@@ -1,33 +1,33 @@
-# coding: utf-8
-
 # TODO: test actual CLI
+
+
+from __future__ import annotations
 
 import itertools
 import tarfile
 import textwrap
 import zipfile
 from pathlib import Path
-from typing import List
 
 import pytest
 
 from duviz import (
-    TreeRenderer,
-    SIZE_FORMATTER_COUNT,
     SIZE_FORMATTER_BYTES,
     SIZE_FORMATTER_BYTES_BINARY,
-    path_split,
-    SizeTree,
+    SIZE_FORMATTER_COUNT,
     AsciiDoubleLineBarRenderer,
-    DuProcessor,
-    InodeProcessor,
-    get_progress_reporter,
     AsciiSingleLineBarRenderer,
     ColorDoubleLineBarRenderer,
-    ColorSingleLineBarRenderer,
     Colorizer,
-    ZipFileProcessor,
+    ColorSingleLineBarRenderer,
+    DuProcessor,
+    InodeProcessor,
+    SizeTree,
     TarFileProcessor,
+    TreeRenderer,
+    ZipFileProcessor,
+    get_progress_reporter,
+    path_split,
 )
 
 
@@ -492,7 +492,7 @@ def _dedent(s: str) -> str:
     return textwrap.dedent(s.lstrip("\n").rstrip(" "))
 
 
-def _dedent_and_split(s: str) -> List[str]:
+def _dedent_and_split(s: str) -> list[str]:
     return _dedent(s).strip("\n").split("\n")
 
 
@@ -737,7 +737,7 @@ def test_get_progress_reporter():
         write=lambda s: output.append(s), time=time, max_interval=10, terminal_width=10
     )
     for i in range(200):
-        progress("path-{i}".format(i=i))
+        progress(f"path-{i}")
 
     assert all(len(line.rstrip("\r")) <= 10 for line in output)
     # Extract "printed" path indexes

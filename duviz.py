@@ -9,6 +9,8 @@ License: MIT
 Website: https://github.com/soxofaan/duviz
 """
 
+from __future__ import annotations
+
 import argparse
 import contextlib
 import itertools
@@ -20,10 +22,9 @@ import sys
 import tarfile
 import time
 import unicodedata
-from typing import Any, Callable, Dict, Iterable, Iterator, List, Optional, Tuple, Union
 import zipfile
 from pathlib import Path
-
+from typing import Any, Callable, Iterable, Iterator
 
 # TODO: catch absence/failure of du/ls subprocesses
 # TODO: how to handle unreadable subdirs in du/ls?
@@ -34,7 +35,7 @@ from pathlib import Path
 __version__ = "3.2.0"
 
 
-def path_split(path: str, base: str = "") -> List[str]:
+def path_split(path: str, base: str = "") -> list[str]:
     """
     Split a file system path in a list of path components (as a recursive os.path.split()),
     optionally only up to a given base path.
@@ -66,10 +67,10 @@ class SizeTree:
     Base class for a tree of nodes where each node has a size and zero or more sub-nodes.
     """
 
-    __slots__ = ["name", "size", "children"]
+    __slots__ = ["children", "name", "size"]
 
     def __init__(
-        self, name: str, size: int = 0, children: Optional[Dict[str, "SizeTree"]] = None
+        self, name: str, size: int = 0, children: dict[str, SizeTree] | None = None
     ):
         self.name = name
         self.size = size
@@ -78,10 +79,10 @@ class SizeTree:
     @classmethod
     def from_path_size_pairs(
         cls,
-        pairs: Iterable[Tuple[List[str], int]],
+        pairs: Iterable[tuple[list[str], int]],
         root: str = "/",
         _recalculate_sizes: bool = False,
-    ) -> "SizeTree":
+    ) -> SizeTree:
         """
         Build SizeTree from given (path, size) pairs
         """
@@ -100,7 +101,7 @@ class SizeTree:
             tree._recalculate_own_sizes_to_total_sizes()
         return tree
 
-    def __lt__(self, other: "SizeTree") -> bool:
+    def __lt__(self, other: SizeTree) -> bool:
         # We only implement rich comparison method __lt__ so make sorting work.
         return (self.size, self.name) < (other.size, other.name)
 
@@ -127,7 +128,7 @@ class DuProcessor:
         root: str,
         one_filesystem: bool = False,
         dereference: bool = False,
-        progress_report: Optional[Callable[[str], None]] = None,
+        progress_report: Callable[[str], None] | None = None,
     ) -> SizeTree:
         # Measure size in 1024 byte blocks. The GNU-du option -b enables counting
         # in bytes directly, but it is not available in BSD-du.
@@ -157,9 +158,9 @@ class DuProcessor:
         cls,
         root: str,
         du_listing: Iterable[str],
-        progress_report: Optional[Callable[[str], None]] = None,
+        progress_report: Callable[[str], None] | None = None,
     ) -> SizeTree:
-        def pairs(lines: Iterable[str]) -> Iterator[Tuple[List[str], int]]:
+        def pairs(lines: Iterable[str]) -> Iterator[tuple[list[str], int]]:
             for line in lines:
                 try:
                     kb, path = cls._du_regex.match(line).group(1, 2)
@@ -175,7 +176,7 @@ class DuProcessor:
 class InodeProcessor:
     @classmethod
     def from_ls(
-        cls, root: str, progress_report: Optional[Callable[[str], None]] = None
+        cls, root: str, progress_report: Callable[[str], None] | None = None
     ) -> SizeTree:
         command = ["ls", "-aiR", root]
         try:
@@ -195,9 +196,9 @@ class InodeProcessor:
         cls,
         root: str,
         ls_listing: str,
-        progress_report: Optional[Callable[[str], None]] = None,
+        progress_report: Callable[[str], None] | None = None,
     ) -> SizeTree:
-        def pairs(listing: str) -> Iterator[Tuple[List[str], int]]:
+        def pairs(listing: str) -> Iterator[tuple[list[str], int]]:
             all_inodes = set()
 
             # Process data per directory block (separated by two newlines)
@@ -239,7 +240,7 @@ class ZipFileProcessor:
     """Build `SizeTree` from a file tree in a ZIP archive file."""
 
     @staticmethod
-    def from_zipfile(path: Union[str, Path], compressed: bool = True) -> SizeTree:
+    def from_zipfile(path: str | Path, compressed: bool = True) -> SizeTree:
         # TODO: handle zipfile.BadZipFile in nicer way?
         with zipfile.ZipFile(path, mode="r") as zf:
             if compressed:
@@ -257,7 +258,7 @@ class TarFileProcessor:
     """Build `SizeTree` from file tree in a tar archive file."""
 
     @staticmethod
-    def from_tar_file(path: Union[str, Path]) -> SizeTree:
+    def from_tar_file(path: str | Path) -> SizeTree:
         with tarfile.open(path, mode="r") as tf:
             pairs = ((path_split(m.name), m.size) for m in tf.getmembers())
             return SizeTree.from_path_size_pairs(
@@ -270,16 +271,17 @@ class SizeFormatter:
 
     __slots__ = ["base", "formats"]
 
-    def __init__(self, base: int, formats: List[str]):
+    def __init__(self, base: int, formats: list[str]):
         self.base = base
         self.formats = formats
 
     def format(self, size: int) -> str:
+        rescaled: float = float(size)
         for f in self.formats[:-1]:
-            if round(size, 2) < self.base:
-                return f % size
-            size = float(size) / self.base
-        return self.formats[-1] % size
+            if round(rescaled, 2) < self.base:
+                return f % rescaled
+            rescaled = (rescaled) / self.base
+        return self.formats[-1] % rescaled
 
 
 SIZE_FORMATTER_COUNT = SizeFormatter(1000, ["%d", "%.2fk", "%.2fM", "%.2fG", "%.2fT"])
@@ -300,7 +302,7 @@ class TreeRenderer:
         self.max_depth = max_depth
         self._size_formatter = size_formatter
 
-    def render(self, tree: SizeTree, width: int) -> List[str]:
+    def render(self, tree: SizeTree, width: int) -> list[str]:
         raise NotImplementedError
 
     @staticmethod
@@ -354,13 +356,13 @@ class AsciiDoubleLineBarRenderer(TreeRenderer):
 
     _top_line_fill = "_"
 
-    def render(self, tree: SizeTree, width: int) -> List[str]:
+    def render(self, tree: SizeTree, width: int) -> list[str]:
         lines = []
         if self._top_line_fill:
             lines.append(self._top_line_fill * width)
         return lines + self._render(tree, width, self.max_depth)
 
-    def render_node(self, node: SizeTree, width: int) -> List[str]:
+    def render_node(self, node: SizeTree, width: int) -> list[str]:
         """Render a single node"""
         return [
             self.bar(
@@ -376,7 +378,7 @@ class AsciiDoubleLineBarRenderer(TreeRenderer):
             ),
         ]
 
-    def _render(self, tree: SizeTree, width: int, depth: int) -> List[str]:
+    def _render(self, tree: SizeTree, width: int, depth: int) -> list[str]:
         lines = []
         if width < 1 or depth < 0:
             return lines
@@ -426,12 +428,10 @@ class AsciiSingleLineBarRenderer(AsciiDoubleLineBarRenderer):
 
     _top_line_fill = None
 
-    def render_node(self, node: SizeTree, width: int) -> List[str]:
+    def render_node(self, node: SizeTree, width: int) -> list[str]:
         return [
             self.bar(
-                label="{n}: {s}".format(
-                    n=node.name, s=self._size_formatter.format(node.size)
-                ),
+                label=f"{node.name}: {self._size_formatter.format(node.size)}",
                 width=width,
                 fill=".",
                 left="[",
@@ -448,10 +448,10 @@ class Colorizer:
     _END = "\x02"
 
     # Red, Green, Yellow
-    _COLOR_CYCLE_RGY = ["\x1b[41;97m", "\x1b[42;30m", "\x1b[43;30m"]
+    _COLOR_CYCLE_RGY = ("\x1b[41;97m", "\x1b[42;30m", "\x1b[43;30m")
 
     # Blue, Magenta, Cyan
-    _COLOR_CYCLE_BMC = ["\x1b[44;97m", "\x1b[45;30m", "\x1b[46;30m"]
+    _COLOR_CYCLE_BMC = ("\x1b[44;97m", "\x1b[45;30m", "\x1b[46;30m")
 
     _COLOR_RESET = "\x1b[0m"
 
@@ -465,7 +465,7 @@ class Colorizer:
         return len(b.replace(cls._START, "").replace(cls._END, ""))
 
     @classmethod
-    def _get_colorize(cls, colors: List[str]):
+    def _get_colorize(cls, colors: Iterable[str]):
         """Construct function that replaces markers with color codes (cycling through given color codes)"""
         color_cycle = itertools.cycle(colors)
 
@@ -493,7 +493,7 @@ class ColorDoubleLineBarRenderer(AsciiDoubleLineBarRenderer):
     _top_line_fill = None
     _colorizer = Colorizer()
 
-    def render_node(self, node: SizeTree, width: int) -> List[str]:
+    def render_node(self, node: SizeTree, width: int) -> list[str]:
         return [
             self._colorizer.wrap(
                 self.bar(
@@ -517,7 +517,7 @@ class ColorDoubleLineBarRenderer(AsciiDoubleLineBarRenderer):
             ),
         ]
 
-    def render(self, tree: SizeTree, width: int) -> List[str]:
+    def render(self, tree: SizeTree, width: int) -> list[str]:
         lines = super().render(tree=tree, width=width)
         colorize_cycle = itertools.cycle(
             [
@@ -541,13 +541,11 @@ class ColorSingleLineBarRenderer(AsciiSingleLineBarRenderer):
     _top_line_fill = None
     _colorizer = Colorizer()
 
-    def render_node(self, node: SizeTree, width: int) -> List[str]:
+    def render_node(self, node: SizeTree, width: int) -> list[str]:
         return [
             self._colorizer.wrap(
                 self.bar(
-                    label="{n}: {s}".format(
-                        n=node.name, s=self._size_formatter.format(node.size)
-                    ),
+                    label=f"{node.name}: {self._size_formatter.format(node.size)}",
                     width=width,
                     fill=" ",
                     left="",
@@ -557,7 +555,7 @@ class ColorSingleLineBarRenderer(AsciiSingleLineBarRenderer):
             )
         ]
 
-    def render(self, tree: SizeTree, width: int) -> List[str]:
+    def render(self, tree: SizeTree, width: int) -> list[str]:
         lines = super().render(tree=tree, width=width)
         colorize_cycle = itertools.cycle(
             [
@@ -702,12 +700,12 @@ def main():
     args = cli.parse_args()
 
     # Make sure we have a valid list of paths
-    paths: List[str] = []
+    paths: list[str] = []
     for path in args.paths:
         if os.path.exists(path):
             paths.append(path)
         else:
-            sys.stderr.write('Warning: not a valid path: "%s"\n' % path)
+            sys.stderr.write('Warning: not a valid path: {path!r}"\n')
 
     if args.show_progress:
         progress_report = get_progress_reporter(terminal_width=args.display_width)
@@ -723,7 +721,7 @@ def main():
         elif args.tar or (
             os.path.isfile(path)
             and any(
-                path.endswith(ext) for ext in {".tar", ".tar.gz", ".tgz", "tar.bz2"}
+                path.endswith(ext) for ext in (".tar", ".tar.gz", ".tgz", "tar.bz2")
             )
         ):
             tree = TarFileProcessor().from_tar_file(path)
