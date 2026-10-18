@@ -9,6 +9,7 @@
   ([#15](https://github.com/soxofaan/duviz/issues/15))
 - Bring back CLI option `--version` to show current version.
   ([#29](https://github.com/soxofaan/duviz/issues/29))
+- Python support (CI run coverage): drop Python 3.6 and 3.7; add Python 3.12, 3.13, 3.14 and 3.15 ([#30](https://github.com/soxofaan/duviz/issues/30))
 
 
 ## [3.2.0] - 2022-12-18
