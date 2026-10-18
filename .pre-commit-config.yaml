@@ -16,8 +16,7 @@ repos:
     -   id: flake8
         args: [--max-line-length=120]
 
--   repo: https://github.com/akaihola/darker
-    rev: v3.0.0
+-   repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.1
     hooks:
-    -   id: darker
-        additional_dependencies: [black]
+    -   id: ruff-format

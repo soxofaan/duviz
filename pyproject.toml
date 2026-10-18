@@ -51,7 +51,3 @@ path = "duviz.py"
 include = [
     "duviz.py",
 ]
-
-
-[tool.black]
-line-length = 120
