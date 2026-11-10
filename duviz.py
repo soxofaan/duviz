@@ -698,7 +698,7 @@ def main():
         if Path(path).exists():
             paths.append(path)
         else:
-            sys.stderr.write('Warning: not a valid path: {path!r}"\n')
+            sys.stderr.write(f'Warning: not a valid path: {path!r}\n')
 
     if args.show_progress:
         progress_report = get_progress_reporter(terminal_width=args.display_width)
