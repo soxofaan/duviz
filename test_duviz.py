@@ -4,12 +4,15 @@
 from __future__ import annotations
 
 import itertools
+import sys
 import tarfile
 import textwrap
 import zipfile
 from pathlib import Path
 
 import pytest
+
+import duviz
 
 from duviz import (
     SIZE_FORMATTER_BYTES,
@@ -831,3 +834,9 @@ class TestTarFileProcessor:
             "[___2.60KB__][__2.20KB__]               ",
         ]
         assert result == expected
+
+def test_main_warns_with_path_for_invalid_path(monkeypatch, capsys):
+    monkeypatch.setattr(sys, "argv", ["duviz", "--no-progress", "does-not-exist-xyz"])
+    duviz.main()
+    err = capsys.readouterr().err
+    assert "does-not-exist-xyz" in err
